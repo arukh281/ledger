@@ -142,7 +142,7 @@ export default function LedgerPage() {
         .slice(0, 120);
     }
 
-    document.title = `${sanitizeForFilename(selectedVendor.name)} - ${sanitizeForFilename(rangeLabel)}`;
+    document.title = `${sanitizeForFilename(selectedVendor.name)} and ${sanitizeForFilename(rangeLabel)}`;
 
     function restoreTitle() {
       document.title = previousTitle;
