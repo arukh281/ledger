@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vendor Ledger App
 
-## Getting Started
+A digital vendor account ledger built with Next.js — designed for ease of use with large text, high contrast, and minimal steps to complete any action.
 
-First, run the development server:
+## Features
+
+- **Vendor Management** — add, edit, delete vendors with GSTIN validation
+- **Transaction Logging** — invoice (credit) and payment (debit) entries per vendor
+- **Ledger View** — running balance, date range filters, summary cards per vendor
+- **Nil Balance** — one-click balance write-off that posts a balancing entry
+- **Print Account** — professional printable vendor statement with `Ctrl+P` / Print button
+- **Dual Storage** — all writes go to both Supabase (primary) and Firebase (backup). Reads fall back to Firebase automatically if Supabase is unreachable.
+
+---
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy the example file and fill in your credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your Supabase and Firebase project credentials.
+
+**Supabase setup:**
+1. Create a free project at https://app.supabase.com
+2. Go to SQL Editor and paste + run the contents of `supabase/schema.sql`
+3. Copy the Project URL and anon key from Project Settings → API
+
+**Firebase setup:**
+1. Create a free project at https://console.firebase.google.com
+2. Enable Cloud Firestore (start in test/production mode)
+3. Register a Web App and copy the `firebaseConfig` values
+4. See `docs/firebase-structure.md` for detailed collection layout and security rules
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pages
 
-## Learn More
+| Page | URL | Purpose |
+|------|-----|---------|
+| Dashboard | `/` | Quick entry form + recent transactions |
+| Vendor Ledger | `/ledger` | Full account view, filters, nil balance, print |
+| Manage Vendors | `/vendors` | Add / edit / delete vendors |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data Storage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+Write path:   UI action → Server Action → Supabase (primary) + Firebase (mirror)
+              Success only when BOTH writes complete.
 
-## Deploy on Vercel
+Read path:    Client → Supabase client SDK
+              If Supabase fails → Firebase Firestore (fallback)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `docs/firebase-structure.md` for the Firestore schema.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Ledger Balance Logic
+
+| Entry Type | Effect on Balance |
+|------------|-------------------|
+| Invoice    | + (we owe vendor more) |
+| Payment    | − (we paid the vendor) |
+
+- **Closing Balance** = Opening Balance + Total Invoiced − Total Paid
+- **Positive** closing balance = amount still owed to vendor
+- **Negative** closing balance = vendor owes us a refund
+
+---
+
+## Nil Balance
+
+The **Nil Balance** button on the ledger page writes off the current closing balance to ₹0 by posting a balancing entry:
+
+- Positive balance → posts a **Payment** for that amount
+- Negative balance → posts an **Invoice** for that amount
+- Entry is labelled `Balance Write-off` with doc number `NIL-<timestamp>`
+
+---
+
+## Print Account
+
+Click **Print Account** on the vendor ledger page. The browser print dialog opens showing a clean, printer-friendly statement that includes:
+
+- Vendor name and GSTIN
+- Selected date range
+- Summary cards (Opening, Invoiced, Paid, Closing)
+- Full transaction table with running balance
+- Print date footer
+
+All UI controls and navigation are hidden in print output.
+
+---
+
+## Tech Stack
+
+- **Next.js 16** (App Router, TypeScript)
+- **Tailwind CSS v4**
+- **Supabase** (`@supabase/supabase-js`)
+- **Firebase** (`firebase` JS SDK v12)
+- **react-hot-toast** for notifications
+- **lucide-react** for icons

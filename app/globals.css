@@ -1,26 +1,236 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────
+   Design Tokens
+   ────────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #e2e5eb;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --nav-bg: #0f172a;
+  --nav-text: #cbd5e1;
+  --nav-active: #f8fafc;
+  --primary: #1e40af;
+  --primary-hover: #1d4ed8;
+  --danger: #b91c1c;
+  --danger-hover: #991b1b;
+  --invoice-bg: #fffbeb;
+  --invoice-text: #92400e;
+  --invoice-border: #fcd34d;
+  --payment-bg: #ecfdf5;
+  --payment-text: #166534;
+  --payment-border: #6ee7b7;
+  --nil-bg: #f8fafc;
+  --nil-text: #64748b;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ──────────────────────────────────────────────────────────────
+   Base
+   ────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: "Geist", system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+h1 { font-size: 1.5rem; font-weight: 600; }
+h2 { font-size: 1.125rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
+
+/* ──────────────────────────────────────────────────────────────
+   Form controls
+   ────────────────────────────────────────────────────────────── */
+input, select, textarea {
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 2.5rem;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.12);
+}
+
+/* Amount field: prefix cell + input (avoids overlap with global input padding) */
+input.input-infix {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0%;
+  min-height: 2.5rem;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+}
+
+input.input-infix:focus {
+  box-shadow: none;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Entry type badges
+   ────────────────────────────────────────────────────────────── */
+.badge-invoice {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: var(--invoice-bg);
+  color: var(--invoice-text);
+  border: 1px solid var(--invoice-border);
+}
+
+.badge-payment {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: var(--payment-bg);
+  color: var(--payment-text);
+  border: 1px solid var(--payment-border);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Nil-balance row
+   ────────────────────────────────────────────────────────────── */
+.row-nil {
+  background: var(--nil-bg);
+  color: var(--nil-text);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Print styles
+   ────────────────────────────────────────────────────────────── */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: #fff;
+    font-size: 11pt;
+    color: #000;
+  }
+
+  .print-page {
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .print-header {
+    border-bottom: 2pt solid #000;
+    margin-bottom: 12pt;
+    padding-bottom: 8pt;
+  }
+
+  .print-table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1pt solid #999;
+    padding: 4pt 5pt;
+    font-size: 9pt;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    box-sizing: border-box;
+  }
+
+  .print-table th {
+    background: #e5e7eb;
+    font-weight: 700;
+  }
+
+  .print-table tr:nth-child(even) td {
+    background: #f9fafb;
+  }
+
+  .print-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8pt;
+    margin-bottom: 16pt;
+  }
+
+  .print-summary-card {
+    border: 1pt solid #ccc;
+    padding: 6pt 8pt;
+    border-radius: 4pt;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .print-footer {
+    margin-top: 16pt;
+    border-top: 1pt solid #ccc;
+    padding-top: 6pt;
+    font-size: 8pt;
+    color: #666;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+/* Hide print-only sections on screen */
+.print-only {
+  display: none;
 }

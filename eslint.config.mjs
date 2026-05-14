@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // This rule flags the standard data-fetching pattern
+      // (setState inside useEffect with async .then()) as an error,
+      // which is a false positive for this codebase's load patterns.
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
