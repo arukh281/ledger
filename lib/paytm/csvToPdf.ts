@@ -17,6 +17,24 @@ function formatAmount(amount: number): string {
   return String(amount);
 }
 
+/** Strip UTF-8 BOM and surrounding quotes from CSV cell values. */
+function normalizeCell(value: string): string {
+  let s = value.replace(/^\uFEFF/, '').trim();
+  while (
+    (s.startsWith("'") && s.endsWith("'")) ||
+    (s.startsWith('"') && s.endsWith('"'))
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
+function columnKey(record: Record<string, string>, name: string): string | undefined {
+  const target = name.toLowerCase();
+  const key = Object.keys(record).find(k => normalizeCell(k).toLowerCase() === target);
+  return key;
+}
+
 function parseCsvRows(csvText: string): { date: string; amount: number }[] {
   const records = parse(csvText, {
     columns: true,
@@ -28,18 +46,19 @@ function parseCsvRows(csvText: string): { date: string; amount: number }[] {
     throw new ValueError('CSV file must contain Transaction_Date and Amount columns');
   }
 
-  const keys = Object.keys(records[0]!);
-  if (!keys.includes('Transaction_Date') || !keys.includes('Amount')) {
+  const dateKey = columnKey(records[0]!, 'Transaction_Date');
+  const amountKey = columnKey(records[0]!, 'Amount');
+  if (!dateKey || !amountKey) {
     throw new ValueError("CSV file must contain 'Transaction_Date' and 'Amount' columns");
   }
 
   const rows: { date: string; amount: number }[] = [];
   for (const row of records) {
-    const rawDate = row.Transaction_Date;
-    const rawAmount = row.Amount;
+    const rawDate = row[dateKey];
+    const rawAmount = row[amountKey];
     if (rawDate === undefined || rawAmount === undefined) continue;
 
-    const parsed = new Date(rawDate);
+    const parsed = new Date(normalizeCell(rawDate));
     if (Number.isNaN(parsed.getTime())) {
       throw new ValueError('Invalid Transaction_Date');
     }
@@ -47,7 +66,7 @@ function parseCsvRows(csvText: string): { date: string; amount: number }[] {
     const month = String(parsed.getMonth() + 1).padStart(2, '0');
     const date = `${day}/${month}`;
 
-    const amount = Number(rawAmount);
+    const amount = Number(normalizeCell(rawAmount));
     if (Number.isNaN(amount)) {
       throw new ValueError('Invalid Amount');
     }

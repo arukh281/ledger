@@ -36,11 +36,12 @@ export default function PaytmPage() {
       const res = await fetch('/api/paytm/csv-to-pdf', { method: 'POST', body: fd });
 
       if (!res.ok) {
-        setError(
-          res.status === 400
-            ? "CSV must include 'Transaction_Date' and 'Amount' columns."
-            : 'Conversion failed. Try again.'
-        );
+        if (res.status === 400) {
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          setError(body?.error ?? "CSV must include 'Transaction_Date' and 'Amount' columns.");
+        } else {
+          setError('Conversion failed. Try again.');
+        }
         return;
       }
 

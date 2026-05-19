@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     if (e instanceof PaytmCsvError) {
-      return new Response(null, { status: 400 });
+      return Response.json({ error: e.message }, { status: 400 });
     }
     console.error('Paytm PDF conversion failed:', e);
     return new Response(null, { status: 500 });
