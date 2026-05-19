@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Users } from 'lucide-react';
+import { BookOpen, Layers, Wallet } from 'lucide-react';
 
 const links = [
-  { href: '/ledger', label: 'Ledger', icon: BookOpen },
-  { href: '/vendors', label: 'Vendors', icon: Users },
+  { href: '/paytm', label: 'Paytm', icon: Wallet },
+  { href: '/secondary', label: 'Secondary', icon: Layers },
+  { href: '/primary', label: 'Primary', icon: BookOpen },
 ];
 
 export function Navbar() {
@@ -19,18 +20,18 @@ export function Navbar() {
     >
       <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
         <Link
-          href="/ledger"
+          href="/primary"
           className="font-semibold tracking-tight no-underline"
           style={{
             fontSize: '0.9375rem',
             color: 'var(--nav-text)',
           }}
         >
-          Ledger
+          Tally
         </Link>
         <ul className="flex gap-0.5">
           {links.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
+            const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <li key={href}>
                 <Link

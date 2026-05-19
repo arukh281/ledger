@@ -1,13 +1,9 @@
 /**
- * Repository layer — all data access goes through here.
- *
- * WRITE strategy: Write to Supabase (primary) AND Firebase (mirror) in parallel.
- *   Returns success only when BOTH writes succeed.
- *
- * READ strategy: Try Supabase first. If Supabase is unreachable/errors, fall back to Firebase.
+ * Secondary ledger repository — separate tables from primary book.
+ * Same Supabase + Firebase mirror strategy as lib/repository.ts.
  */
 
-import { Vendor, LedgerEntry, ActionResult } from './types';
+import { SecondaryVendor, LedgerEntry, ActionResult } from './types';
 import { formatSupabaseDbError } from './supabaseErrors';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { getFirestoreDb } from './firebase';
@@ -22,12 +18,11 @@ import {
   where,
   orderBy,
 } from 'firebase/firestore';
+import type { CreateEntryPayload, UpdateEntryPayload } from './repository';
 
-// ─── Firestore collection names ───────────────────────────────────────────────
-const COL_VENDORS = 'vendors';
-const COL_ENTRIES = 'ledger_entries';
+const COL_VENDORS = 'secondary_vendors';
+const COL_ENTRIES = 'secondary_ledger_entries';
 
-/** When DISABLE_FIREBASE_MIRROR=1, reads must not silently hit broken Firestore. */
 function blockFirebaseFallbackOrThrow(supabaseFailure: string | null): void {
   if (!isFirebaseMirrorDisabled()) return;
   if (supabaseFailure) {
@@ -38,18 +33,16 @@ function blockFirebaseFallbackOrThrow(supabaseFailure: string | null): void {
   );
 }
 
-// ─── Vendor: Reads ────────────────────────────────────────────────────────────
-
-export async function getVendors(): Promise<Vendor[]> {
+export async function getSecondaryVendors(): Promise<SecondaryVendor[]> {
   let supabaseFail: string | null = null;
   if (isSupabaseConfigured()) {
     try {
       const sb = getSupabase();
       const { data, error } = await sb
-        .from('vendors')
+        .from('secondary_vendors')
         .select('*')
         .order('name');
-      if (!error && data) return data as Vendor[];
+      if (!error && data) return data as SecondaryVendor[];
       supabaseFail = error?.message ?? 'Unknown Supabase error';
       console.warn('Supabase read failed, falling back to Firebase:', supabaseFail);
     } catch (e) {
@@ -61,7 +54,7 @@ export async function getVendors(): Promise<Vendor[]> {
   try {
     const db = getFirestoreDb();
     const snap = await getDocs(query(collection(db, COL_VENDORS), orderBy('name')));
-    return snap.docs.map(d => d.data() as Vendor);
+    return snap.docs.map(d => d.data() as SecondaryVendor);
   } catch (e) {
     throw new Error(
       supabaseFail
@@ -71,36 +64,27 @@ export async function getVendors(): Promise<Vendor[]> {
   }
 }
 
-// ─── Vendor: Writes ───────────────────────────────────────────────────────────
-
-export async function createVendor(
-  payload: Pick<Vendor, 'name' | 'gstin'>
-): Promise<ActionResult<Vendor>> {
+export async function createSecondaryVendor(
+  payload: Pick<SecondaryVendor, 'name' | 'ref'>
+): Promise<ActionResult<SecondaryVendor>> {
   try {
-    // 1. Write to Supabase
     const sb = getSupabase();
     const { data: sbData, error: sbErr } = await sb
-      .from('vendors')
-      .insert({ name: payload.name, gstin: payload.gstin })
+      .from('secondary_vendors')
+      .insert({ name: payload.name, ref: payload.ref })
       .select()
       .single();
 
-    if (sbErr) {
-      if (sbErr.code === '23505') {
-        return { success: false, error: 'A vendor with this GSTIN already exists.' };
-      }
-      return { success: false, error: formatSupabaseDbError(sbErr.message) };
-    }
+    if (sbErr) return { success: false, error: formatSupabaseDbError(sbErr.message) };
 
-    const vendor = sbData as Vendor;
+    const vendor = sbData as SecondaryVendor;
 
-    // 2. Mirror to Firebase (optional when DISABLE_FIREBASE_MIRROR=1)
     if (!isFirebaseMirrorDisabled()) {
       try {
         const db = getFirestoreDb();
         await setDoc(doc(db, COL_VENDORS, vendor.id), vendor);
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (vendor create):', fbErr);
+        console.error('Firebase mirror write failed (secondary vendor create):', fbErr);
         return {
           success: false,
           error: 'Saved to main database but backup sync failed. Please try again.',
@@ -114,34 +98,29 @@ export async function createVendor(
   }
 }
 
-export async function updateVendor(
+export async function updateSecondaryVendor(
   id: string,
-  payload: Pick<Vendor, 'name' | 'gstin'>
-): Promise<ActionResult<Vendor>> {
+  payload: Pick<SecondaryVendor, 'name' | 'ref'>
+): Promise<ActionResult<SecondaryVendor>> {
   try {
     const sb = getSupabase();
     const { data: sbData, error: sbErr } = await sb
-      .from('vendors')
-      .update({ name: payload.name, gstin: payload.gstin })
+      .from('secondary_vendors')
+      .update({ name: payload.name, ref: payload.ref })
       .eq('id', id)
       .select()
       .single();
 
-    if (sbErr) {
-      if (sbErr.code === '23505') {
-        return { success: false, error: 'Another vendor with this GSTIN already exists.' };
-      }
-      return { success: false, error: formatSupabaseDbError(sbErr.message) };
-    }
+    if (sbErr) return { success: false, error: formatSupabaseDbError(sbErr.message) };
 
-    const vendor = sbData as Vendor;
+    const vendor = sbData as SecondaryVendor;
 
     if (!isFirebaseMirrorDisabled()) {
       try {
         const db = getFirestoreDb();
         await setDoc(doc(db, COL_VENDORS, id), vendor);
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (vendor update):', fbErr);
+        console.error('Firebase mirror write failed (secondary vendor update):', fbErr);
         return {
           success: false,
           error: 'Updated in main database but backup sync failed. Please try again.',
@@ -155,23 +134,22 @@ export async function updateVendor(
   }
 }
 
-export async function deleteVendor(id: string): Promise<ActionResult> {
+export async function deleteSecondaryVendor(id: string): Promise<ActionResult> {
   try {
     const sb = getSupabase();
-    const { error: sbErr } = await sb.from('vendors').delete().eq('id', id);
+    const { error: sbErr } = await sb.from('secondary_vendors').delete().eq('id', id);
     if (sbErr) return { success: false, error: formatSupabaseDbError(sbErr.message) };
 
     if (!isFirebaseMirrorDisabled()) {
       try {
         const db = getFirestoreDb();
         await deleteDoc(doc(db, COL_VENDORS, id));
-        // Also delete all entries for this vendor from Firebase
         const entriesSnap = await getDocs(
           query(collection(db, COL_ENTRIES), where('vendor_id', '==', id))
         );
         await Promise.all(entriesSnap.docs.map(d => deleteDoc(d.ref)));
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (vendor delete):', fbErr);
+        console.error('Firebase mirror write failed (secondary vendor delete):', fbErr);
         return {
           success: false,
           error: 'Deleted from main database but backup sync failed.',
@@ -185,25 +163,21 @@ export async function deleteVendor(id: string): Promise<ActionResult> {
   }
 }
 
-// ─── Ledger Entries: Reads ────────────────────────────────────────────────────
-
-export async function getEntriesByVendor(vendorId: string): Promise<LedgerEntry[]> {
+export async function getSecondaryEntriesByVendor(vendorId: string): Promise<LedgerEntry[]> {
   let supabaseFail: string | null = null;
   if (isSupabaseConfigured()) {
     try {
       const sb = getSupabase();
       const { data, error } = await sb
-        .from('ledger_entries')
+        .from('secondary_ledger_entries')
         .select('*')
         .eq('vendor_id', vendorId)
         .order('date', { ascending: true })
         .order('created_at', { ascending: true });
       if (!error && data) return data as LedgerEntry[];
       supabaseFail = error?.message ?? 'Unknown Supabase error';
-      console.warn('Supabase read failed, falling back to Firebase:', supabaseFail);
     } catch (e) {
       supabaseFail = String(e);
-      console.warn('Supabase unreachable, falling back to Firebase:', e);
     }
   }
   blockFirebaseFallbackOrThrow(supabaseFail);
@@ -227,25 +201,13 @@ export async function getEntriesByVendor(vendorId: string): Promise<LedgerEntry[
   }
 }
 
-// ─── Ledger Entries: Writes ───────────────────────────────────────────────────
-
-export interface CreateEntryPayload {
-  vendor_id: string;
-  type: 'invoice' | 'payment';
-  date: string;
-  amount: number;
-  doc_number: string;
-  notes: string;
-  is_system_generated?: boolean;
-}
-
-export async function createEntry(
+export async function createSecondaryEntry(
   payload: CreateEntryPayload
 ): Promise<ActionResult<LedgerEntry>> {
   try {
     const sb = getSupabase();
     const { data: sbData, error: sbErr } = await sb
-      .from('ledger_entries')
+      .from('secondary_ledger_entries')
       .insert({
         vendor_id: payload.vendor_id,
         type: payload.type,
@@ -267,7 +229,7 @@ export async function createEntry(
         const db = getFirestoreDb();
         await setDoc(doc(db, COL_ENTRIES, entry.id), entry);
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (entry create):', fbErr);
+        console.error('Firebase mirror write failed (secondary entry create):', fbErr);
         return {
           success: false,
           error: 'Saved to main database but backup sync failed. Please try again.',
@@ -281,22 +243,14 @@ export async function createEntry(
   }
 }
 
-export interface UpdateEntryPayload {
-  type: 'invoice' | 'payment';
-  date: string;
-  amount: number;
-  doc_number: string;
-  notes: string;
-}
-
-export async function updateEntry(
+export async function updateSecondaryEntry(
   id: string,
   payload: UpdateEntryPayload
 ): Promise<ActionResult<LedgerEntry>> {
   try {
     const sb = getSupabase();
     const { data: existing, error: fetchErr } = await sb
-      .from('ledger_entries')
+      .from('secondary_ledger_entries')
       .select('id, is_system_generated')
       .eq('id', id)
       .maybeSingle();
@@ -308,7 +262,7 @@ export async function updateEntry(
     }
 
     const { data: sbData, error: sbErr } = await sb
-      .from('ledger_entries')
+      .from('secondary_ledger_entries')
       .update({
         type: payload.type,
         date: payload.date,
@@ -329,7 +283,7 @@ export async function updateEntry(
         const db = getFirestoreDb();
         await setDoc(doc(db, COL_ENTRIES, entry.id), entry);
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (entry update):', fbErr);
+        console.error('Firebase mirror write failed (secondary entry update):', fbErr);
         return {
           success: false,
           error: 'Saved to main database but backup sync failed. Please try again.',
@@ -343,10 +297,10 @@ export async function updateEntry(
   }
 }
 
-export async function deleteEntry(id: string): Promise<ActionResult> {
+export async function deleteSecondaryEntry(id: string): Promise<ActionResult> {
   try {
     const sb = getSupabase();
-    const { error: sbErr } = await sb.from('ledger_entries').delete().eq('id', id);
+    const { error: sbErr } = await sb.from('secondary_ledger_entries').delete().eq('id', id);
     if (sbErr) return { success: false, error: formatSupabaseDbError(sbErr.message) };
 
     if (!isFirebaseMirrorDisabled()) {
@@ -354,7 +308,7 @@ export async function deleteEntry(id: string): Promise<ActionResult> {
         const db = getFirestoreDb();
         await deleteDoc(doc(db, COL_ENTRIES, id));
       } catch (fbErr) {
-        console.error('Firebase mirror write failed (entry delete):', fbErr);
+        console.error('Firebase mirror write failed (secondary entry delete):', fbErr);
         return {
           success: false,
           error: 'Deleted from main database but backup sync failed.',

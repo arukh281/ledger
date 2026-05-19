@@ -1,9 +1,19 @@
 export type EntryType = 'invoice' | 'payment';
 
+export type LedgerScope = 'primary' | 'secondary';
+
 export interface Vendor {
   id: string;
   name: string;
   gstin: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SecondaryVendor {
+  id: string;
+  name: string;
+  ref: string;
   created_at: string;
   updated_at: string;
 }

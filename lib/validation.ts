@@ -33,6 +33,11 @@ export function validateVendorName(value: string): { valid: boolean; error?: str
   return { valid: true };
 }
 
+/** Secondary vendors: ref is free text (any value, including empty). */
+export function normalizeRef(ref: string): string {
+  return ref.trim();
+}
+
 export function todayISO(): string {
   return new Date().toISOString().split('T')[0];
 }
@@ -58,6 +63,15 @@ export function formatINR(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+}
+
+/** WinAnsi-safe currency for PDFKit (Helvetica lacks the ₹ glyph U+20B9). */
+export function formatINRForPdf(amount: number): string {
+  const amountPart = new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `Rs. ${amountPart}`;
 }
 
 export function formatDate(dateStr: string): string {

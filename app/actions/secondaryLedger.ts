@@ -1,74 +1,74 @@
 'use server';
 
 import {
-  createVendor,
-  updateVendor,
-  deleteVendor,
-  createEntry,
-  updateEntry,
-  deleteEntry,
-  getEntriesByVendor,
-  getVendors,
-} from '@/lib/repository';
+  createSecondaryVendor,
+  updateSecondaryVendor,
+  deleteSecondaryVendor,
+  createSecondaryEntry,
+  updateSecondaryEntry,
+  deleteSecondaryEntry,
+  getSecondaryEntriesByVendor,
+  getSecondaryVendors,
+} from '@/lib/secondaryRepository';
 import { computeClosingBalance } from '@/lib/ledgerMath';
 import {
-  validateGSTIN,
   validateAmount,
   validateDocNumber,
   validateVendorName,
-  normalizeGSTIN,
+  normalizeRef,
   todayISO,
 } from '@/lib/validation';
-import { ActionResult, Vendor, LedgerEntry } from '@/lib/types';
+import { ActionResult, SecondaryVendor, LedgerEntry } from '@/lib/types';
 
-// ─── Vendor Actions ───────────────────────────────────────────────────────────
-
-export async function actionCreateVendor(
-  name: string,
-  gstin: string
-): Promise<ActionResult<Vendor>> {
-  const nameCheck = validateVendorName(name);
-  if (!nameCheck.valid) return { success: false, error: nameCheck.error! };
-
-  const gstinCheck = validateGSTIN(gstin);
-  if (!gstinCheck.valid) return { success: false, error: gstinCheck.error! };
-
-  return createVendor({ name: name.trim(), gstin: normalizeGSTIN(gstin) });
-}
-
-export async function actionUpdateVendor(
-  id: string,
-  name: string,
-  gstin: string
-): Promise<ActionResult<Vendor>> {
-  if (!id) return { success: false, error: 'Vendor ID is required' };
-
-  const nameCheck = validateVendorName(name);
-  if (!nameCheck.valid) return { success: false, error: nameCheck.error! };
-
-  const gstinCheck = validateGSTIN(gstin);
-  if (!gstinCheck.valid) return { success: false, error: gstinCheck.error! };
-
-  return updateVendor(id, { name: name.trim(), gstin: normalizeGSTIN(gstin) });
-}
-
-export async function actionDeleteVendor(id: string): Promise<ActionResult> {
-  if (!id) return { success: false, error: 'Vendor ID is required' };
-  return deleteVendor(id);
-}
-
-export async function actionGetVendors(): Promise<ActionResult<Vendor[]>> {
+export async function actionGetSecondaryVendors(): Promise<ActionResult<SecondaryVendor[]>> {
   try {
-    const vendors = await getVendors();
+    const vendors = await getSecondaryVendors();
     return { success: true, data: vendors };
   } catch (e) {
     return { success: false, error: String(e) };
   }
 }
 
-// ─── Entry Actions ────────────────────────────────────────────────────────────
+export async function actionCreateSecondaryVendor(
+  name: string,
+  ref: string
+): Promise<ActionResult<SecondaryVendor>> {
+  const nameCheck = validateVendorName(name);
+  if (!nameCheck.valid) return { success: false, error: nameCheck.error! };
 
-export async function actionCreateEntry(
+  return createSecondaryVendor({ name: name.trim(), ref: normalizeRef(ref) });
+}
+
+export async function actionUpdateSecondaryVendor(
+  id: string,
+  name: string,
+  ref: string
+): Promise<ActionResult<SecondaryVendor>> {
+  if (!id) return { success: false, error: 'Vendor ID is required' };
+
+  const nameCheck = validateVendorName(name);
+  if (!nameCheck.valid) return { success: false, error: nameCheck.error! };
+
+  return updateSecondaryVendor(id, { name: name.trim(), ref: normalizeRef(ref) });
+}
+
+export async function actionDeleteSecondaryVendor(id: string): Promise<ActionResult> {
+  if (!id) return { success: false, error: 'Vendor ID is required' };
+  return deleteSecondaryVendor(id);
+}
+
+export async function actionGetSecondaryEntriesByVendor(
+  vendorId: string
+): Promise<ActionResult<LedgerEntry[]>> {
+  try {
+    const entries = await getSecondaryEntriesByVendor(vendorId);
+    return { success: true, data: entries };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+export async function actionCreateSecondaryEntry(
   vendorId: string,
   type: 'invoice' | 'payment',
   date: string,
@@ -86,7 +86,7 @@ export async function actionCreateEntry(
   const docCheck = validateDocNumber(docNumber);
   if (!docCheck.valid) return { success: false, error: docCheck.error! };
 
-  return createEntry({
+  return createSecondaryEntry({
     vendor_id: vendorId,
     type,
     date,
@@ -97,7 +97,7 @@ export async function actionCreateEntry(
   });
 }
 
-export async function actionUpdateEntry(
+export async function actionUpdateSecondaryEntry(
   entryId: string,
   type: 'invoice' | 'payment',
   date: string,
@@ -115,7 +115,7 @@ export async function actionUpdateEntry(
   const docCheck = validateDocNumber(docNumber);
   if (!docCheck.valid) return { success: false, error: docCheck.error! };
 
-  return updateEntry(entryId, {
+  return updateSecondaryEntry(entryId, {
     type,
     date,
     amount: parseFloat(amount),
@@ -124,48 +124,29 @@ export async function actionUpdateEntry(
   });
 }
 
-export async function actionDeleteEntry(id: string): Promise<ActionResult> {
+export async function actionDeleteSecondaryEntry(id: string): Promise<ActionResult> {
   if (!id) return { success: false, error: 'Entry ID is required' };
-  return deleteEntry(id);
+  return deleteSecondaryEntry(id);
 }
 
-export async function actionGetEntriesByVendor(
-  vendorId: string
-): Promise<ActionResult<LedgerEntry[]>> {
-  try {
-    const entries = await getEntriesByVendor(vendorId);
-    return { success: true, data: entries };
-  } catch (e) {
-    return { success: false, error: String(e) };
-  }
-}
-
-// ─── Nil Balance Action ───────────────────────────────────────────────────────
-
-export async function actionNilBalance(
+export async function actionSecondaryNilBalance(
   vendorId: string
 ): Promise<ActionResult<LedgerEntry>> {
   if (!vendorId) return { success: false, error: 'Vendor ID is required' };
 
-  // 1. Fetch all entries for this vendor
-  const allEntries = await getEntriesByVendor(vendorId);
-
-  // 2. Compute current closing balance
+  const allEntries = await getSecondaryEntriesByVendor(vendorId);
   const closingBalance = computeClosingBalance(allEntries);
 
   if (closingBalance === 0) {
     return { success: false, error: 'Balance is already ₹0 — no adjustment needed.' };
   }
 
-  // 3. Determine balancing entry type and amount
-  //    Positive balance (we owe vendor) → post a Payment to cancel it
-  //    Negative balance (vendor owes us) → post an Invoice to cancel it
   const type: 'invoice' | 'payment' = closingBalance > 0 ? 'payment' : 'invoice';
   const amount = Math.abs(closingBalance);
   const docNumber = `NIL-${Date.now()}`;
   const today = todayISO();
 
-  return createEntry({
+  return createSecondaryEntry({
     vendor_id: vendorId,
     type,
     date: today,

@@ -1,0 +1,297 @@
+'use client';
+
+import { Download, PlusCircle, ArrowLeft } from 'lucide-react';
+import {
+  LedgerEntry,
+  LedgerEntryWithBalance,
+  LedgerSummary,
+  Vendor,
+} from '@/lib/types';
+import { WorkspaceMeta } from '@/lib/workspaceConfig';
+import {
+  WorkspaceVendorRow,
+  PeriodMode,
+  CALENDAR_MONTHS,
+  FINANCIAL_YEAR_MODE_LABEL,
+  FinancialYearOption,
+} from '@/lib/ledgerWorkspaceUtils';
+import { todayISO } from '@/lib/validation';
+import { WorkspaceActions } from '@/lib/workspaceActions';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Dialog } from '@/components/ui/Dialog';
+import { SummaryCards } from '@/components/ledger/SummaryCards';
+import { LedgerTable } from '@/components/ledger/LedgerTable';
+import { NilBalanceButton } from '@/components/ledger/NilBalanceButton';
+import { EntryForm } from '@/components/forms/EntryForm';
+
+interface LedgerDetailPanelProps {
+  config: WorkspaceMeta;
+  actions: WorkspaceActions;
+  vendor: WorkspaceVendorRow;
+  vendorsForForm: Vendor[];
+  onBack: () => void;
+  onDownload: () => void;
+  downloading: boolean;
+  closingBalance: number;
+  entriesLoading: boolean;
+  filteredEntries: LedgerEntryWithBalance[];
+  summary: LedgerSummary;
+  periodMode: PeriodMode;
+  onPeriodModeChange: (mode: PeriodMode) => void;
+  calendarMonth: number;
+  onCalendarMonthChange: (month: number) => void;
+  calendarYear: number;
+  onCalendarYearChange: (year: number) => void;
+  yearOptions: number[];
+  financialYearOptions: FinancialYearOption[];
+  financialYearStart: number;
+  onFinancialYearStartChange: (startYear: number) => void;
+  fromDate: string;
+  onFromDateChange: (value: string) => void;
+  toDate: string;
+  onToDateChange: (value: string) => void;
+  hasFilter: boolean;
+  onClearFilters: () => void;
+  showAddEntry: boolean;
+  editEntry: LedgerEntry | null;
+  onCloseEntryDialog: () => void;
+  onOpenAddEntry: () => void;
+  onEditEntry: (entry: LedgerEntryWithBalance) => void;
+  onRefreshEntries: () => void;
+}
+
+export function LedgerDetailPanel({
+  config,
+  actions,
+  vendor,
+  vendorsForForm,
+  onBack,
+  onDownload,
+  downloading,
+  closingBalance,
+  entriesLoading,
+  filteredEntries,
+  summary,
+  periodMode,
+  onPeriodModeChange,
+  calendarMonth,
+  onCalendarMonthChange,
+  calendarYear,
+  onCalendarYearChange,
+  yearOptions,
+  financialYearOptions,
+  financialYearStart,
+  onFinancialYearStartChange,
+  fromDate,
+  onFromDateChange,
+  toDate,
+  onToDateChange,
+  hasFilter,
+  onClearFilters,
+  showAddEntry,
+  editEntry,
+  onCloseEntryDialog,
+  onOpenAddEntry,
+  onEditEntry,
+  onRefreshEntries,
+}: LedgerDetailPanelProps) {
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex items-center gap-3 no-print">
+        <Button variant="ghost" onClick={onBack} className="shrink-0 px-2">
+          <ArrowLeft size={16} />
+          Vendors
+        </Button>
+        <h1 className="m-0 text-lg">{config.title}</h1>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 no-print">
+        <div>
+          <h2 className="m-0 text-base font-semibold">{vendor.name}</h2>
+          <p className="font-mono text-xs m-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {config.identifierLabel}: {vendor.identifier || '—'}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onOpenAddEntry}>
+            <PlusCircle size={16} />
+            Entry
+          </Button>
+          <NilBalanceButton
+            vendorId={vendor.id}
+            vendorName={vendor.name}
+            closingBalance={closingBalance}
+            onSuccess={onRefreshEntries}
+            onNilBalance={actions.nilBalance}
+          />
+          <Button variant="outline" onClick={onDownload} disabled={downloading}>
+            <Download size={16} />
+            {downloading ? 'Downloading…' : 'Download'}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog
+        open={showAddEntry || editEntry !== null}
+        onClose={onCloseEntryDialog}
+        title={editEntry ? 'Edit entry' : 'New entry'}
+        panelMaxWidthClass="max-w-2xl"
+        bodyClassName="max-h-[85vh] overflow-y-auto overscroll-contain"
+      >
+        <EntryForm
+          key={editEntry?.id ?? 'new-entry'}
+          vendors={vendorsForForm}
+          preselectedVendorId={vendor.id}
+          entryToEdit={editEntry}
+          onCreateEntry={actions.createEntry}
+          onUpdateEntry={actions.updateEntry}
+          onSuccess={() => {
+            onRefreshEntries();
+            onCloseEntryDialog();
+          }}
+        />
+      </Dialog>
+
+      <Card className="no-print">
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-2 block">Period</label>
+            <div
+              className="inline-flex rounded-lg border p-0.5 gap-0.5"
+              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+              role="group"
+              aria-label="Ledger period"
+            >
+              {(
+                [
+                  { mode: 'all' as const, label: 'All dates' },
+                  { mode: 'financial_year' as const, label: FINANCIAL_YEAR_MODE_LABEL },
+                  { mode: 'month' as const, label: 'Month' },
+                  { mode: 'custom' as const, label: 'Custom' },
+                ] as const
+              ).map(({ mode, label }) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => onPeriodModeChange(mode)}
+                  className={[
+                    'px-3 py-1.5 text-sm font-medium rounded-md border transition-colors',
+                    periodMode === mode
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-transparent text-slate-700 border-transparent hover:bg-slate-100',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {periodMode === 'financial_year' && (
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[140px]">
+                <label htmlFor="ledger-fy">Financial year</label>
+                <select
+                  id="ledger-fy"
+                  value={financialYearStart}
+                  onChange={e => onFinancialYearStartChange(Number(e.target.value))}
+                >
+                  {financialYearOptions.map(fy => (
+                    <option key={fy.startYear} value={fy.startYear}>
+                      {fy.shortLabel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {periodMode === 'month' && (
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[140px]">
+                <label htmlFor="ledger-month">Month</label>
+                <select
+                  id="ledger-month"
+                  value={calendarMonth}
+                  onChange={e => onCalendarMonthChange(Number(e.target.value))}
+                >
+                  {CALENDAR_MONTHS.map(m => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[100px]">
+                <label htmlFor="ledger-year">Year</label>
+                <select
+                  id="ledger-year"
+                  value={calendarYear}
+                  onChange={e => onCalendarYearChange(Number(e.target.value))}
+                >
+                  {yearOptions.map(y => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {periodMode === 'custom' && (
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[140px]">
+                <label htmlFor="from-date">From</label>
+                <input
+                  id="from-date"
+                  type="date"
+                  value={fromDate}
+                  max={toDate || todayISO()}
+                  onChange={e => onFromDateChange(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 min-w-[140px]">
+                <label htmlFor="to-date">To</label>
+                <input
+                  id="to-date"
+                  type="date"
+                  value={toDate}
+                  min={fromDate}
+                  max={todayISO()}
+                  onChange={e => onToDateChange(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {hasFilter && (
+            <div>
+              <Button variant="ghost" onClick={onClearFilters} className="shrink-0">
+                <ArrowLeft size={16} />
+                Reset
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {entriesLoading ? (
+        <p className="m-0 text-sm" style={{ color: 'var(--text-muted)' }}>
+          Loading…
+        </p>
+      ) : (
+        <div className="no-print">
+          <SummaryCards summary={summary} />
+          <LedgerTable
+            entries={filteredEntries}
+            onRefresh={onRefreshEntries}
+            onEditEntry={onEditEntry}
+            onDeleteEntry={actions.deleteEntry}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

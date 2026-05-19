@@ -4,6 +4,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Scale } from 'lucide-react';
 import { actionNilBalance } from '@/app/actions/ledger';
+import { ActionResult, LedgerEntry } from '@/lib/types';
 import { formatINR } from '@/lib/validation';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -13,9 +14,16 @@ interface Props {
   vendorName: string;
   closingBalance: number;
   onSuccess: () => void;
+  onNilBalance?: (vendorId: string) => Promise<ActionResult<LedgerEntry>>;
 }
 
-export function NilBalanceButton({ vendorId, vendorName, closingBalance, onSuccess }: Props) {
+export function NilBalanceButton({
+  vendorId,
+  vendorName,
+  closingBalance,
+  onSuccess,
+  onNilBalance = actionNilBalance,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +32,7 @@ export function NilBalanceButton({ vendorId, vendorName, closingBalance, onSucce
   async function handleConfirm() {
     setLoading(true);
     try {
-      const res = await actionNilBalance(vendorId);
+      const res = await onNilBalance(vendorId);
       if (res.success) {
         toast.success('Balance cleared.');
         setOpen(false);

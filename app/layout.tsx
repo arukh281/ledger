@@ -7,8 +7,8 @@ import './globals.css';
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
 
 export const metadata: Metadata = {
-  title: 'Ledger',
-  description: 'Vendor accounts',
+  title: 'Tally',
+  description: 'Vendor accounts and Paytm statements',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

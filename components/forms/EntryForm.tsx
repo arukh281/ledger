@@ -15,6 +15,8 @@ interface EntryFormProps {
   preselectedVendorId?: string;
   /** When set, saves update this entry instead of creating a new one */
   entryToEdit?: LedgerEntry | null;
+  onCreateEntry?: typeof actionCreateEntry;
+  onUpdateEntry?: typeof actionUpdateEntry;
 }
 
 interface FormState {
@@ -28,7 +30,14 @@ interface FormState {
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
-export function EntryForm({ vendors, onSuccess, preselectedVendorId, entryToEdit }: EntryFormProps) {
+export function EntryForm({
+  vendors,
+  onSuccess,
+  preselectedVendorId,
+  entryToEdit,
+  onCreateEntry = actionCreateEntry,
+  onUpdateEntry = actionUpdateEntry,
+}: EntryFormProps) {
   const isEdit = Boolean(entryToEdit);
 
   const [form, setForm] = useState<FormState>(() =>
@@ -82,7 +91,7 @@ export function EntryForm({ vendors, onSuccess, preselectedVendorId, entryToEdit
     setSaving(true);
     try {
       if (entryToEdit) {
-        const res = await actionUpdateEntry(
+        const res = await onUpdateEntry(
           entryToEdit.id,
           form.type,
           form.date,
@@ -98,7 +107,7 @@ export function EntryForm({ vendors, onSuccess, preselectedVendorId, entryToEdit
           toast.error(res.error);
         }
       } else {
-        const res = await actionCreateEntry(
+        const res = await onCreateEntry(
           form.vendorId,
           form.type,
           form.date,

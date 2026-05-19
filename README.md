@@ -4,12 +4,13 @@ A digital vendor account ledger built with Next.js — designed for ease of use 
 
 ## Features
 
-- **Vendor Management** — add, edit, delete vendors with GSTIN validation
-- **Transaction Logging** — invoice (credit) and payment (debit) entries per vendor
-- **Ledger View** — running balance, date range filters, summary cards per vendor
-- **Nil Balance** — one-click balance write-off that posts a balancing entry
-- **Print Account** — professional printable vendor statement with `Ctrl+P` / Print button
-- **Dual Storage** — all writes go to both Supabase (primary) and Firebase (backup). Reads fall back to Firebase automatically if Supabase is unreachable.
+- **Primary ledger** — vendors with GSTIN; vendor list → open ledger via book icon
+- **Secondary ledger** — separate book with free-text `ref` per vendor (run `supabase/secondary-schema.sql`)
+- **Paytm** — CSV upload → statement PDF (ported from legacy Python tool)
+- **Transaction logging** — invoice and payment entries, running balance, period filters
+- **Write-off** — one-click balance nil adjustment
+- **Print** — printable vendor statement
+- **Dual storage** — Supabase primary + Firebase mirror; reads fall back to Firebase if Supabase fails
 
 ---
 
@@ -33,7 +34,7 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 
 **Supabase setup:**
 1. Create a free project at https://app.supabase.com
-2. Go to SQL Editor and paste + run the contents of `supabase/schema.sql`
+2. Go to SQL Editor and run `supabase/schema.sql`, then `supabase/secondary-schema.sql` if using Secondary
 3. Copy the Project URL and anon key from Project Settings → API
 
 **Firebase setup:**
@@ -56,9 +57,9 @@ Open http://localhost:3000
 
 | Page | URL | Purpose |
 |------|-----|---------|
-| Dashboard | `/` | Quick entry form + recent transactions |
-| Vendor Ledger | `/ledger` | Full account view, filters, nil balance, print |
-| Manage Vendors | `/vendors` | Add / edit / delete vendors |
+| Primary | `/primary` | Vendor list → ledger (GSTIN vendors, existing data) |
+| Secondary | `/secondary` | Vendor list → ledger (separate book, free-text ref) |
+| Paytm | `/paytm` | CSV upload → statement PDF |
 
 ---
 

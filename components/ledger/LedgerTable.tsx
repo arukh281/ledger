@@ -9,6 +9,7 @@ import { TypeBadge } from '@/components/ui/Badge';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { actionDeleteEntry } from '@/app/actions/ledger';
+import { ActionResult } from '@/lib/types';
 
 interface LedgerTableProps {
   entries: LedgerEntryWithBalance[];
@@ -16,6 +17,7 @@ interface LedgerTableProps {
   showVendorName?: boolean;
   vendorNames?: Record<string, string>;
   onEditEntry?: (entry: LedgerEntryWithBalance) => void;
+  onDeleteEntry?: (id: string) => Promise<ActionResult>;
 }
 
 export function LedgerTable({
@@ -24,6 +26,7 @@ export function LedgerTable({
   showVendorName = false,
   vendorNames = {},
   onEditEntry,
+  onDeleteEntry = actionDeleteEntry,
 }: LedgerTableProps) {
   const [deleteTarget, setDeleteTarget] = useState<LedgerEntryWithBalance | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -32,7 +35,7 @@ export function LedgerTable({
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await actionDeleteEntry(deleteTarget.id);
+      const res = await onDeleteEntry(deleteTarget.id);
       if (res.success) {
         toast.success('Removed.');
         setDeleteTarget(null);
