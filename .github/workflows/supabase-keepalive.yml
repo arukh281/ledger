@@ -1,5 +1,5 @@
-# Twice-weekly app test + Supabase keep-alive ping, with email notification.
-# Schedule: Monday & Thursday 09:00 UTC.
+# Daily app test + Supabase keep-alive ping, with email notification.
+# Schedule: every day at 03:30 UTC (09:00 IST).
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
 #   SUPABASE_URL       — same as NEXT_PUBLIC_SUPABASE_URL in .env.local
@@ -15,11 +15,11 @@
 #   MAIL_SECURE        — set to 1 only when using port 465
 #   APP_URL            — deployed app URL; also checks GET /primary
 
-name: Weekly check
+name: Daily check
 
 on:
   schedule:
-    - cron: '0 9 * * 1,4'
+    - cron: '30 3 * * *'
   workflow_dispatch:
 
 jobs:
@@ -75,7 +75,7 @@ jobs:
 
           if [ "${CHECK_OUTCOME}" = "success" ]; then
             {
-              echo "Tally weekly check passed."
+              echo "Tally daily check passed."
               echo
               echo "Time (UTC): ${ts}"
               echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -87,10 +87,10 @@ jobs:
               echo
               cat "${log}"
             } > "${body_file}"
-            echo "subject=✅ Tally weekly check OK (${ts})" >> "$GITHUB_OUTPUT"
+            echo "subject=✅ Tally daily check OK (${ts})" >> "$GITHUB_OUTPUT"
           else
             {
-              echo "Tally weekly check FAILED."
+              echo "Tally daily check FAILED."
               echo
               echo "Time (UTC): ${ts}"
               echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -98,7 +98,7 @@ jobs:
               echo "--- Error log ---"
               cat "${log}"
             } > "${body_file}"
-            echo "subject=❌ Tally weekly check FAILED (${ts})" >> "$GITHUB_OUTPUT"
+            echo "subject=❌ Tally daily check FAILED (${ts})" >> "$GITHUB_OUTPUT"
           fi
 
           echo "body_file=${body_file}" >> "$GITHUB_OUTPUT"

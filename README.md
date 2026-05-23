@@ -37,7 +37,7 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 2. Go to SQL Editor and run `supabase/schema.sql`, then `supabase/secondary-schema.sql` if using Secondary
 3. Copy the Project URL and anon key from Project Settings → API
 
-**Weekly check (Free tier keep-alive + app test):** Free Supabase projects pause after 7 days without API activity. `.github/workflows/supabase-keepalive.yml` runs **lint, build, and a Supabase ping** every **Monday and Thursday at 09:00 UTC**, and emails you the result. Add repository secrets in **Settings → Secrets and variables → Actions**:
+**Daily check (Free tier keep-alive + app test):** Free Supabase projects pause after 7 days without API activity. `.github/workflows/supabase-keepalive.yml` runs **lint, build, and a Supabase ping every day at 09:00 IST (03:30 UTC)**, and emails you the result. Add repository secrets in **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |--------|--------|
@@ -54,7 +54,7 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 
 Use the **HTTPS Project URL** (`https://xxxx.supabase.co`) — not the `postgres://` database string. Re-copy both Supabase values from Project Settings → API if you see HTTP 401.
 
-Run manually from **Actions → Weekly check → Run workflow**, or locally: `npm test` (with Supabase env vars set).
+Run manually from **Actions → Daily check → Run workflow**, or locally: `npm test` (with Supabase env vars set).
 
 **Firebase setup:**
 1. Create a free project at https://console.firebase.google.com
