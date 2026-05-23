@@ -12,8 +12,9 @@ import {
 } from '@/app/actions/gstin';
 import {
   GSTIN_CATEGORY_ORDER,
-  GSTIN_DIRECTORY_PDF_SCOPES,
   countGstinDirectoryRows,
+  defaultGstinDirectoryPdfScope,
+  gstinDirectoryPdfScopesForCounts,
   type GstinCategory,
   type GstinDirectory,
   type GstinDirectoryPdfScope,
@@ -227,13 +228,25 @@ export function GstinDirectory() {
     return countGstinDirectoryRows(directoryForPdf(), scope);
   }
 
+  function availablePdfScopes(): GstinDirectoryPdfScope[] {
+    const dir = directoryForPdf();
+    return gstinDirectoryPdfScopesForCounts(dir.customer.length, dir.primary.length);
+  }
+
   function openDownloadDialog() {
-    const customerCount = rowCountForScope('customer');
-    const primaryCount = rowCountForScope('primary');
-    if (customerCount > 0 && primaryCount > 0) setDownloadScope('both');
-    else if (customerCount > 0) setDownloadScope('customer');
-    else if (primaryCount > 0) setDownloadScope('primary');
-    else setDownloadScope('both');
+    const scopes = availablePdfScopes();
+    if (scopes.length === 0) {
+      toast.error('Nothing to download.');
+      return;
+    }
+    if (scopes.length === 1) {
+      void handleDownload(scopes[0]!);
+      return;
+    }
+    const dir = directoryForPdf();
+    setDownloadScope(
+      defaultGstinDirectoryPdfScope(dir.customer.length, dir.primary.length)
+    );
     setDownloadDialogOpen(true);
   }
 
@@ -416,13 +429,14 @@ export function GstinDirectory() {
           </>
         }
       >
-        <p className="m-0 text-sm text-muted">Choose which sections to include in the PDF.</p>
+        <p className="m-0 text-sm text-muted">
+          Customer and primary both have firms — pick one section or export both.
+        </p>
         <fieldset className="m-0 mt-3 flex flex-col gap-2 border-0 p-0">
           <legend className="sr-only">PDF sections to include</legend>
-          {GSTIN_DIRECTORY_PDF_SCOPES.map(scope => {
+          {availablePdfScopes().map(scope => {
             const rowCount = rowCountForScope(scope);
             const selected = downloadScope === scope;
-            const disabled = rowCount === 0;
             const countLabel = query.trim()
               ? `${rowCount} matching`
               : `${rowCount} firm${rowCount === 1 ? '' : 's'}`;
@@ -431,21 +445,16 @@ export function GstinDirectory() {
                 key={scope}
                 className={[
                   'choice-card rounded-lg border px-3 py-2.5 transition-colors',
-                  disabled ? 'choice-card--disabled' : '',
-                  selected && !disabled
+                  selected
                     ? 'border-[var(--primary)] bg-blue-50/60'
-                    : 'border-slate-200',
-                  !disabled && !selected ? 'hover:border-slate-300' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                    : 'border-slate-200 hover:border-slate-300',
+                ].join(' ')}
               >
                 <input
                   type="radio"
                   name="gstin-pdf-scope"
                   value={scope}
                   checked={selected}
-                  disabled={disabled}
                   onChange={() => setDownloadScope(scope)}
                   className="mt-0.5 h-4 w-4"
                 />
@@ -456,7 +465,7 @@ export function GstinDirectory() {
                   <span className="mt-0.5 block text-xs leading-snug text-slate-500">
                     {PDF_SCOPE_DESCRIPTIONS[scope]}
                     {' · '}
-                    {disabled ? 'none in current list' : countLabel}
+                    {countLabel}
                   </span>
                 </span>
               </label>

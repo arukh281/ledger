@@ -46,6 +46,28 @@ export function countGstinDirectoryRows(
   return directory.customer.length + directory.primary.length;
 }
 
+/** PDF scope choices that apply for the current customer/primary counts. */
+export function gstinDirectoryPdfScopesForCounts(
+  customerCount: number,
+  primaryCount: number
+): GstinDirectoryPdfScope[] {
+  const hasCustomer = customerCount > 0;
+  const hasPrimary = primaryCount > 0;
+  if (hasCustomer && hasPrimary) return ['customer', 'primary', 'both'];
+  if (hasCustomer) return ['customer'];
+  if (hasPrimary) return ['primary'];
+  return [];
+}
+
+export function defaultGstinDirectoryPdfScope(
+  customerCount: number,
+  primaryCount: number
+): GstinDirectoryPdfScope {
+  const scopes = gstinDirectoryPdfScopesForCounts(customerCount, primaryCount);
+  if (scopes.includes('both')) return 'both';
+  return scopes[0] ?? 'both';
+}
+
 export function parseGstinRowKey(key: string): { category: GstinCategory; id: string } | null {
   const sep = key.indexOf(':');
   if (sep <= 0) return null;

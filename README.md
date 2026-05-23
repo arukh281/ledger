@@ -7,9 +7,12 @@ A digital vendor account ledger built with Next.js — designed for ease of use 
 - **Primary ledger** — vendors with GSTIN; vendor list → open ledger via book icon
 - **Secondary ledger** — separate book with free-text `ref` per vendor (run `supabase/secondary-schema.sql`)
 - **Paytm** — CSV upload → statement PDF (ported from legacy Python tool)
+- **Invoice** — create and edit tax invoices; download PDF
+- **HSN catalog** — item names, HSN codes, and GST rates; search and PDF export
+- **GSTIN directory** — customer firms you manage; primary vendors synced from the Primary ledger (view only); PDF export with section picker when both customer and primary have firms
 - **Transaction logging** — invoice and payment entries, running balance, period filters
 - **Write-off** — one-click balance nil adjustment
-- **Print** — printable vendor statement
+- **Print / PDF** — printable vendor statement; formal bordered PDFs for HSN and GSTIN lists
 - **Dual storage** — Supabase primary + Firebase mirror; reads fall back to Firebase if Supabase fails
 
 ---
@@ -34,7 +37,12 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 
 **Supabase setup:**
 1. Create a free project at https://app.supabase.com
-2. Go to SQL Editor and run `supabase/schema.sql`, then `supabase/secondary-schema.sql` if using Secondary
+2. Go to SQL Editor and run migrations in this order:
+   - `supabase/schema.sql` (core ledger)
+   - `supabase/secondary-schema.sql` (optional — Secondary book)
+   - `supabase/invoice-schema.sql` and `supabase/invoice-tax-mode.sql` (invoices)
+   - `supabase/hsn-schema.sql` or `supabase/hsn-gst-rate.sql` if the HSN table already exists; `supabase/hsn-gst-nullable-fix.sql` if GST % was NOT NULL
+   - `supabase/gstin-customers-schema.sql` (GSTIN directory customers)
 3. Copy the Project URL and anon key from Project Settings → API
 
 **Daily check (Free tier keep-alive + app test):** Free Supabase projects pause after 7 days without API activity. `.github/workflows/supabase-keepalive.yml` runs **lint, build, and a Supabase ping every day at 09:00 IST (03:30 UTC)**, and emails you the result. Add repository secrets in **Settings → Secrets and variables → Actions**:
@@ -79,6 +87,15 @@ Open http://localhost:3000
 | Primary | `/primary` | Vendor list → ledger (GSTIN vendors, existing data) |
 | Secondary | `/secondary` | Vendor list → ledger (separate book, free-text ref) |
 | Paytm | `/paytm` | CSV upload → statement PDF |
+| Invoice | `/invoice` | List invoices; create at `/invoice/new` |
+| HSN | `/hsn` | HSN / GST catalog; download PDF |
+| GSTIN | `/gstin` | Customer + primary GSTIN directory; download PDF |
+
+### GSTIN PDF export
+
+- **Customers only** or **primary only** — downloads immediately (no section picker).
+- **Both sections have firms** — choose Customer, Primary, or Both in the dialog.
+- **Search active** — PDF uses filtered rows; firm counts in the dialog reflect the filter.
 
 ---
 
