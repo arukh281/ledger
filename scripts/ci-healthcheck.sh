@@ -25,6 +25,9 @@ curl_check() {
   if [ "${http_code}" != "200" ]; then
     echo "${name}: HTTP ${http_code}" >&2
     cat "${body_file}" >&2 || true
+    if [ "${http_code}" = "401" ]; then
+      echo "Hint: Supabase returned 401. Re-copy SUPABASE_URL and SUPABASE_ANON_KEY from Project Settings → API (anon public key, not service_role)." >&2
+    fi
     rm -f "${body_file}"
     exit 1
   fi
@@ -58,6 +61,28 @@ fi
 
 base="${SUPABASE_URL%/}"
 auth=(-H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+# Help catch mismatched GitHub secrets without printing the key.
+url_ref="${base#https://}"
+url_ref="${url_ref%%.supabase.co*}"
+if [[ "${SUPABASE_ANON_KEY}" == eyJ* ]]; then
+  key_ref="$(SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY}" python3 - <<'PY'
+import base64, json, os, sys
+token = os.environ["SUPABASE_ANON_KEY"].split(".")[1]
+token += "=" * (-len(token) % 4)
+try:
+    payload = json.loads(base64.urlsafe_b64decode(token))
+except Exception:
+    sys.exit(0)
+print(payload.get("ref", ""))
+PY
+)"
+  if [ -n "${key_ref}" ] && [ "${key_ref}" != "${url_ref}" ]; then
+    echo "SUPABASE_URL project (${url_ref}) does not match anon key project (${key_ref})." >&2
+    echo "Re-copy both values from Supabase → Project Settings → API." >&2
+    exit 1
+  fi
+fi
 
 step "Supabase auth health"
 curl_check "Supabase auth health" "${auth[@]}" "${base}/auth/v1/health"
