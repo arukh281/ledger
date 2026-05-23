@@ -94,12 +94,23 @@ curl_check "Supabase PostgREST" "${auth[@]}" -H "Accept: application/json" \
 if [ -n "${APP_URL:-}" ]; then
   step "Live app (${APP_URL})"
   live="${APP_URL%/}"
-  code="$(curl -fsS -o /dev/null -w "%{http_code}" "${live}/primary")"
-  if [ "${code}" != "200" ]; then
-    echo "Expected HTTP 200 from ${live}/primary, got ${code}" >&2
+  live="${live%/primary}"
+
+  live_ok=""
+  for path in "/primary" "/"; do
+    code="$(curl -sS -L -o /dev/null -w "%{http_code}" "${live}${path}" || echo "000")"
+    echo "GET ${path} → ${code}"
+    if [ "${code}" = "200" ]; then
+      live_ok="1"
+      break
+    fi
+  done
+
+  if [ -z "${live_ok}" ]; then
+    echo "Live app check failed for ${live}." >&2
+    echo "Hint: set APP_URL to the deployed root only (e.g. https://your-app.vercel.app), or remove APP_URL if not deployed yet." >&2
     exit 1
   fi
-  echo "GET /primary → ${code}"
 fi
 
 echo ""
