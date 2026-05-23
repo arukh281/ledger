@@ -9,8 +9,11 @@ import {
   deleteEntry,
   getEntriesByVendor,
   getVendors,
+  getAllLedgerEntryBalances,
+  restoreEntry,
+  restoreVendor,
 } from '@/lib/repository';
-import { computeClosingBalance } from '@/lib/ledgerMath';
+import { computeClosingBalance, computeClosingBalancesByVendor } from '@/lib/ledgerMath';
 import {
   validateGSTIN,
   validateAmount,
@@ -57,10 +60,28 @@ export async function actionDeleteVendor(id: string): Promise<ActionResult> {
   return deleteVendor(id);
 }
 
+export async function actionRestoreVendor(
+  vendor: Pick<Vendor, 'id' | 'name' | 'gstin'>,
+  entries: LedgerEntry[]
+): Promise<ActionResult> {
+  return restoreVendor(vendor, entries);
+}
+
 export async function actionGetVendors(): Promise<ActionResult<Vendor[]>> {
   try {
     const vendors = await getVendors();
     return { success: true, data: vendors };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+export async function actionGetVendorClosingBalances(): Promise<
+  ActionResult<Record<string, number>>
+> {
+  try {
+    const entries = await getAllLedgerEntryBalances();
+    return { success: true, data: computeClosingBalancesByVendor(entries) };
   } catch (e) {
     return { success: false, error: String(e) };
   }
@@ -127,6 +148,10 @@ export async function actionUpdateEntry(
 export async function actionDeleteEntry(id: string): Promise<ActionResult> {
   if (!id) return { success: false, error: 'Entry ID is required' };
   return deleteEntry(id);
+}
+
+export async function actionRestoreEntry(entry: LedgerEntry): Promise<ActionResult<LedgerEntry>> {
+  return restoreEntry(entry);
 }
 
 export async function actionGetEntriesByVendor(

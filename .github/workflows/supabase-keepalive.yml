@@ -1,0 +1,44 @@
+# Keeps a Supabase Free-tier project from pausing after 7 days of inactivity.
+# Schedule: Monday & Thursday 09:00 UTC.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL       — same as NEXT_PUBLIC_SUPABASE_URL in .env.local
+#   SUPABASE_ANON_KEY  — same as NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local
+
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '0 9 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::Add repository secrets SUPABASE_URL and SUPABASE_ANON_KEY (Project Settings → API in Supabase)."
+            exit 1
+          fi
+
+          base="${SUPABASE_URL%/}"
+          auth=(-H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "→ Auth health"
+          curl -fsS "${base}/auth/v1/health"
+          echo
+
+          echo "→ PostgREST (ledger_entries, limit 1)"
+          curl -fsS "${auth[@]}" -H "Accept: application/json" \
+            "${base}/rest/v1/ledger_entries?select=id&limit=1"
+          echo
+
+          echo "Keep-alive OK at $(date -u +%Y-%m-%dT%H:%M:%SZ)"

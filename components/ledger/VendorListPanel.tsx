@@ -1,11 +1,14 @@
 'use client';
 
-import { Plus, Pencil, Trash2, Save, X, Search, BookOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X, BookOpen } from 'lucide-react';
 import { WorkspaceMeta } from '@/lib/workspaceConfig';
 import { WorkspaceVendorRow } from '@/lib/ledgerWorkspaceUtils';
+import { formatINR } from '@/lib/validation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog';
 import { Dialog } from '@/components/ui/Dialog';
+import { SearchField } from '@/components/ui/SearchField';
 
 export interface VendorFormState {
   name: string;
@@ -37,6 +40,12 @@ interface VendorListPanelProps {
   onSetDeleteTarget: (vendor: WorkspaceVendorRow) => void;
 }
 
+function balanceTone(balance: number): string {
+  if (balance > 0) return 'text-balance-due';
+  if (balance < 0) return 'text-balance-credit';
+  return 'text-muted';
+}
+
 export function VendorListPanel({
   config,
   vendors,
@@ -62,40 +71,30 @@ export function VendorListPanel({
   onSetDeleteTarget,
 }: VendorListPanelProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="m-0">{config.title}</h1>
-        <Button onClick={onOpenAdd} className="gap-1.5">
+    <>
+      <div className="page-header page-header--row">
+        <h1 className="m-0">Ledger</h1>
+        <Button onClick={onOpenAdd} className="gap-1.5 shrink-0">
           <Plus size={16} />
           Add vendor
         </Button>
       </div>
 
-      <Card>
-        <div
-          className="flex min-h-[2.5rem] w-full items-center gap-2.5 rounded-md border bg-white px-3 transition-[border-color,box-shadow] focus-within:border-[var(--primary)] focus-within:shadow-[0_0_0_2px_rgba(30,64,175,0.12)]"
-          style={{ borderColor: 'var(--border)' }}
-        >
-          <Search size={16} strokeWidth={1.75} className="shrink-0 text-slate-400" aria-hidden />
-          <input
-            type="search"
-            value={vendorSearch}
-            onChange={e => onVendorSearchChange(e.target.value)}
-            placeholder={`Search name or ${config.identifierLabel.toLowerCase()}…`}
-            className="input-infix min-h-0 flex-1 py-0"
-            aria-label="Search vendors"
-          />
-        </div>
+      <Card className="!p-3">
+        <SearchField
+          value={vendorSearch}
+          onChange={e => onVendorSearchChange(e.target.value)}
+          placeholder={`Search name or ${config.identifierLabel.toLowerCase()}…`}
+          aria-label="Search vendors"
+        />
       </Card>
 
       {vendorsLoading ? (
-        <p className="m-0 text-sm text-center py-10" style={{ color: 'var(--text-muted)' }}>
-          Loading…
-        </p>
+        <p className="m-0 text-sm text-center py-10 text-muted">Loading…</p>
       ) : filteredVendors.length === 0 ? (
         <Card>
-          <div className="text-center py-8">
-            <p className="m-0 text-sm font-medium text-slate-800">
+          <div className="empty-state !py-8">
+            <p className="m-0 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
               {vendors.length === 0 ? 'No vendors yet' : 'No matches'}
             </p>
             {vendors.length === 0 && (
@@ -109,17 +108,22 @@ export function VendorListPanel({
       ) : (
         <div className="flex flex-col gap-2">
           {filteredVendors.map(v => (
-            <Card key={v.id} className="flex items-center gap-4 py-3.5">
+            <Card key={v.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 py-3.5">
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate m-0 text-slate-900">{v.name}</p>
-                <p
-                  className="font-mono text-xs m-0 mt-0.5 truncate"
-                  style={{ color: 'var(--text-muted)' }}
-                >
+                <p className="font-medium text-sm truncate m-0">{v.name}</p>
+                <p className="font-mono text-xs m-0 mt-0.5 truncate text-muted">
                   {config.identifierLabel}: {v.identifier || '—'}
                 </p>
               </div>
-              <div className="flex gap-1.5 shrink-0">
+              <div className="shrink-0 text-right sm:min-w-[6.5rem]">
+                <p className="text-xs m-0 text-muted">Balance</p>
+                <p
+                  className={`text-sm font-semibold font-mono tabular-nums m-0 mt-0.5 ${balanceTone(v.closingBalance)}`}
+                >
+                  {formatINR(v.closingBalance)}
+                </p>
+              </div>
+              <div className="flex gap-1.5 shrink-0 justify-end sm:ml-0">
                 <Button
                   variant="outline"
                   onClick={() => onSelectVendor(v.id)}
@@ -206,27 +210,20 @@ export function VendorListPanel({
         </div>
       </Dialog>
 
-      <Dialog
+      <ConfirmDeleteDialog
         open={!!vendorDeleteTarget}
         onClose={onCloseDeleteDialog}
         title="Delete vendor"
-        actions={
-          <>
-            <Button variant="ghost" onClick={onCloseDeleteDialog}>
-              <X size={16} /> Cancel
-            </Button>
-            <Button variant="danger" onClick={onVendorDelete} loading={vendorDeleting}>
-              <Trash2 size={16} /> Delete
-            </Button>
-          </>
-        }
+        onConfirm={onVendorDelete}
+        loading={vendorDeleting}
       >
-        <p className="m-0 text-sm text-slate-700">
-          Remove{' '}
-          <span className="font-medium text-slate-900">{vendorDeleteTarget?.name}</span> and all
-          ledger lines for this vendor?
-        </p>
-      </Dialog>
-    </div>
+        {vendorDeleteTarget ? (
+          <>
+            Remove <span className="font-medium text-slate-900">{vendorDeleteTarget.name}</span> and
+            all ledger lines for this vendor?
+          </>
+        ) : null}
+      </ConfirmDeleteDialog>
+    </>
   );
 }

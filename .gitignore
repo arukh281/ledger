@@ -16,12 +16,14 @@
 # next.js
 /.next/
 /out/
+.turbo
 
 # production
 /build
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
 
 # debug
@@ -29,9 +31,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.eslintcache
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (keep .env.example as the committed template)
+.env
+.env*.local
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +44,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local IDE / agent tooling (skills, caches — not app source)
+.cursor/
+.claude/
+
+# local AI prompt scratch (not shipped with the app)
+prompt_context/
+
+# editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

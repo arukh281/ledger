@@ -37,6 +37,29 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 2. Go to SQL Editor and run `supabase/schema.sql`, then `supabase/secondary-schema.sql` if using Secondary
 3. Copy the Project URL and anon key from Project Settings → API
 
+**Keep Supabase awake (Free tier):** Free projects pause after 7 days without API activity. This repo includes `.github/workflows/supabase-keepalive.yml`, which pings Supabase every Monday and Thursday. After pushing to GitHub, add repository secrets **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|--------|--------|
+| `SUPABASE_URL` | Your Project URL (same as `NEXT_PUBLIC_SUPABASE_URL`) |
+| `SUPABASE_ANON_KEY` | Your anon public key (same as `NEXT_PUBLIC_SUPABASE_ANON_KEY`) |
+
+You can also run the workflow manually from the **Actions** tab (**Supabase keep-alive** → **Run workflow**).
+
+**App health check (twice weekly):** `.github/workflows/app-healthcheck.yml` runs `npm test` (lint, build, Supabase connectivity) every **Tuesday and Friday at 09:00 UTC** and emails you the result. Add these repository secrets in addition to the Supabase ones above:
+
+| Secret | Value |
+|--------|--------|
+| `MAIL_SERVER` | SMTP host (e.g. `smtp.gmail.com`) |
+| `MAIL_PORT` | SMTP port (e.g. `587`) |
+| `MAIL_USERNAME` | SMTP login / sender email |
+| `MAIL_PASSWORD` | SMTP password or Gmail app password |
+| `MAIL_TO` | Your email address for notifications |
+| `MAIL_FROM` | *(optional)* From header; defaults to `MAIL_USERNAME` |
+| `APP_URL` | *(optional)* Deployed app URL; also checks `GET /primary` |
+
+Run manually from **Actions → App health check → Run workflow**, or locally with Supabase env vars set: `npm test`.
+
 **Firebase setup:**
 1. Create a free project at https://console.firebase.google.com
 2. Enable Cloud Firestore (start in test/production mode)

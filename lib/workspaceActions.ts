@@ -3,6 +3,7 @@ import {
   actionUpdateVendor,
   actionDeleteVendor,
   actionGetVendors,
+  actionGetVendorClosingBalances,
   actionGetEntriesByVendor,
   actionCreateEntry,
   actionUpdateEntry,
@@ -14,6 +15,7 @@ import {
   actionUpdateSecondaryVendor,
   actionDeleteSecondaryVendor,
   actionGetSecondaryVendors,
+  actionGetSecondaryVendorClosingBalances,
   actionGetSecondaryEntriesByVendor,
   actionCreateSecondaryEntry,
   actionUpdateSecondaryEntry,
@@ -53,9 +55,18 @@ export function getWorkspaceActions(scope: LedgerScope): WorkspaceActions {
   if (scope === 'primary') {
     return {
       loadVendors: async () => {
-        const res = await actionGetVendors();
-        if (!res.success) throw new Error(res.error);
-        return res.data.map(v => ({ id: v.id, name: v.name, identifier: v.gstin }));
+        const [vendorRes, balanceRes] = await Promise.all([
+          actionGetVendors(),
+          actionGetVendorClosingBalances(),
+        ]);
+        if (!vendorRes.success) throw new Error(vendorRes.error);
+        if (!balanceRes.success) throw new Error(balanceRes.error);
+        return vendorRes.data.map(v => ({
+          id: v.id,
+          name: v.name,
+          identifier: v.gstin,
+          closingBalance: balanceRes.data[v.id] ?? 0,
+        }));
       },
       createVendor: actionCreateVendor,
       updateVendor: actionUpdateVendor,
@@ -70,9 +81,18 @@ export function getWorkspaceActions(scope: LedgerScope): WorkspaceActions {
 
   return {
     loadVendors: async () => {
-      const res = await actionGetSecondaryVendors();
-      if (!res.success) throw new Error(res.error);
-      return res.data.map(v => ({ id: v.id, name: v.name, identifier: v.ref }));
+      const [vendorRes, balanceRes] = await Promise.all([
+        actionGetSecondaryVendors(),
+        actionGetSecondaryVendorClosingBalances(),
+      ]);
+      if (!vendorRes.success) throw new Error(vendorRes.error);
+      if (!balanceRes.success) throw new Error(balanceRes.error);
+      return vendorRes.data.map(v => ({
+        id: v.id,
+        name: v.name,
+        identifier: v.ref,
+        closingBalance: balanceRes.data[v.id] ?? 0,
+      }));
     },
     createVendor: actionCreateSecondaryVendor,
     updateVendor: actionUpdateSecondaryVendor,

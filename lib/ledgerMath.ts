@@ -5,7 +5,7 @@ import { LedgerEntry, LedgerEntryWithBalance, LedgerSummary } from './types';
  *   invoice = +amount (we owe the vendor more)
  *   payment = -amount (we paid the vendor)
  */
-export function entryContribution(entry: LedgerEntry): number {
+export function entryContribution(entry: Pick<LedgerEntry, 'type' | 'amount'>): number {
   return entry.type === 'invoice' ? entry.amount : -entry.amount;
 }
 
@@ -73,4 +73,17 @@ export function computeLedger(
  */
 export function computeClosingBalance(allEntries: LedgerEntry[]): number {
   return allEntries.reduce((acc, e) => acc + entryContribution(e), 0);
+}
+
+export type LedgerEntryBalanceSlice = Pick<LedgerEntry, 'vendor_id' | 'type' | 'amount'>;
+
+/** Sum closing balance per vendor from entry slices (one query for all vendors). */
+export function computeClosingBalancesByVendor(
+  entries: LedgerEntryBalanceSlice[]
+): Record<string, number> {
+  const balances: Record<string, number> = {};
+  for (const e of entries) {
+    balances[e.vendor_id] = (balances[e.vendor_id] ?? 0) + entryContribution(e);
+  }
+  return balances;
 }

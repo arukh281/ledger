@@ -9,8 +9,11 @@ import {
   deleteSecondaryEntry,
   getSecondaryEntriesByVendor,
   getSecondaryVendors,
+  getAllSecondaryLedgerEntryBalances,
+  restoreSecondaryEntry,
+  restoreSecondaryVendor,
 } from '@/lib/secondaryRepository';
-import { computeClosingBalance } from '@/lib/ledgerMath';
+import { computeClosingBalance, computeClosingBalancesByVendor } from '@/lib/ledgerMath';
 import {
   validateAmount,
   validateDocNumber,
@@ -24,6 +27,17 @@ export async function actionGetSecondaryVendors(): Promise<ActionResult<Secondar
   try {
     const vendors = await getSecondaryVendors();
     return { success: true, data: vendors };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+export async function actionGetSecondaryVendorClosingBalances(): Promise<
+  ActionResult<Record<string, number>>
+> {
+  try {
+    const entries = await getAllSecondaryLedgerEntryBalances();
+    return { success: true, data: computeClosingBalancesByVendor(entries) };
   } catch (e) {
     return { success: false, error: String(e) };
   }
@@ -55,6 +69,13 @@ export async function actionUpdateSecondaryVendor(
 export async function actionDeleteSecondaryVendor(id: string): Promise<ActionResult> {
   if (!id) return { success: false, error: 'Vendor ID is required' };
   return deleteSecondaryVendor(id);
+}
+
+export async function actionRestoreSecondaryVendor(
+  vendor: Pick<SecondaryVendor, 'id' | 'name' | 'ref'>,
+  entries: LedgerEntry[]
+): Promise<ActionResult> {
+  return restoreSecondaryVendor(vendor, entries);
 }
 
 export async function actionGetSecondaryEntriesByVendor(
@@ -127,6 +148,12 @@ export async function actionUpdateSecondaryEntry(
 export async function actionDeleteSecondaryEntry(id: string): Promise<ActionResult> {
   if (!id) return { success: false, error: 'Entry ID is required' };
   return deleteSecondaryEntry(id);
+}
+
+export async function actionRestoreSecondaryEntry(
+  entry: LedgerEntry
+): Promise<ActionResult<LedgerEntry>> {
+  return restoreSecondaryEntry(entry);
 }
 
 export async function actionSecondaryNilBalance(

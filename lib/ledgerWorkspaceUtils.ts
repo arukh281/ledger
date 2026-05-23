@@ -4,6 +4,8 @@ export interface WorkspaceVendorRow {
   id: string;
   name: string;
   identifier: string;
+  /** Current closing balance (positive = we owe vendor). */
+  closingBalance: number;
 }
 
 export type PeriodMode = 'all' | 'month' | 'custom' | 'financial_year';

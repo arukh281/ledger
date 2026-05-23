@@ -23,6 +23,13 @@ export function formatSupabaseDbError(message: string): string {
     );
   }
 
+  if (m.includes('gst_rate') && (m.includes('not-null') || m.includes('23502'))) {
+    return (
+      'GST column does not allow empty values yet. In Supabase SQL Editor, run ' +
+      'supabase/hsn-gst-nullable-fix.sql, wait a few seconds, then retry.'
+    );
+  }
+
   if (m.includes('row-level security') || m.toLowerCase().includes('rls')) {
     return (
       'Row-level security blocked this action. This app uses the Supabase anon key with no login. ' +

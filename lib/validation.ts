@@ -27,6 +27,11 @@ export function validateDocNumber(value: string): { valid: boolean; error?: stri
   return { valid: true };
 }
 
+export function validateInvoiceNo(value: string): { valid: boolean; error?: string } {
+  if (!value.trim()) return { valid: false, error: 'Invoice number is required' };
+  return { valid: true };
+}
+
 export function validateVendorName(value: string): { valid: boolean; error?: string } {
   if (!value.trim()) return { valid: false, error: 'Vendor name is required' };
   if (value.trim().length < 2) return { valid: false, error: 'Name must be at least 2 characters' };

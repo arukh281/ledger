@@ -26,6 +26,10 @@ import {
 } from '@/lib/ledgerWorkspaceUtils';
 import { VendorListPanel, VendorFormState } from '@/components/ledger/VendorListPanel';
 import { LedgerDetailPanel } from '@/components/ledger/LedgerDetailPanel';
+import { LedgerScopeSwitcher } from '@/components/ledger/LedgerScopeSwitcher';
+import { useDeleteWithUndo } from '@/components/undo/UndoProvider';
+import { actionRestoreVendor } from '@/app/actions/ledger';
+import { actionRestoreSecondaryVendor } from '@/app/actions/secondaryLedger';
 
 const emptyVendorForm: VendorFormState = { name: '', identifier: '' };
 
@@ -34,6 +38,7 @@ interface LedgerWorkspaceProps {
 }
 
 export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
+  const registerDeleteUndo = useDeleteWithUndo();
   const config = getWorkspaceMeta(scope);
   const actions = useMemo(() => getWorkspaceActions(scope), [scope]);
 
@@ -292,16 +297,33 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
 
   async function handleVendorDelete() {
     if (!vendorDeleteTarget) return;
+    const snapshot = vendorDeleteTarget;
     setVendorDeleting(true);
     try {
-      const res = await actions.deleteVendor(vendorDeleteTarget.id);
+      const entriesRes = await actions.getEntriesByVendor(snapshot.id);
+      const entries = entriesRes.success ? entriesRes.data : [];
+
+      const res = await actions.deleteVendor(snapshot.id);
       if (res.success) {
-        toast.success('Removed.');
-        if (selectedVendorId === vendorDeleteTarget.id) {
+        if (selectedVendorId === snapshot.id) {
           setSelectedVendorId('');
         }
         setVendorDeleteTarget(null);
         reloadVendors();
+        registerDeleteUndo('Vendor removed', async () => {
+          const restore =
+            scope === 'primary'
+              ? await actionRestoreVendor(
+                  { id: snapshot.id, name: snapshot.name, gstin: snapshot.identifier },
+                  entries
+                )
+              : await actionRestoreSecondaryVendor(
+                  { id: snapshot.id, name: snapshot.name, ref: snapshot.identifier },
+                  entries
+                );
+          if (!restore.success) throw new Error(restore.error);
+          reloadVendors();
+        });
       } else {
         toast.error(res.error);
       }
@@ -325,7 +347,9 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
 
   if (!selectedVendorId) {
     return (
-      <VendorListPanel
+      <div className="page max-w-3xl">
+        <LedgerScopeSwitcher scope={scope} className="no-print" />
+        <VendorListPanel
         config={config}
         vendors={vendors}
         filteredVendors={filteredVendors}
@@ -349,6 +373,7 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
         onVendorDelete={handleVendorDelete}
         onSetDeleteTarget={setVendorDeleteTarget}
       />
+      </div>
     );
   }
 
@@ -357,7 +382,9 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
   }
 
   return (
-    <LedgerDetailPanel
+    <div className="page max-w-3xl">
+      <LedgerScopeSwitcher scope={scope} className="no-print" />
+      <LedgerDetailPanel
       config={config}
       actions={actions}
       vendor={selectedVendor}
@@ -366,6 +393,7 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
         setSelectedVendorId('');
         setShowAddEntry(false);
         setEditEntry(null);
+        reloadVendors();
       }}
       onDownload={handleDownload}
       downloading={downloading}
@@ -402,5 +430,6 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
       onEditEntry={e => setEditEntry(e)}
       onRefreshEntries={refreshEntries}
     />
+    </div>
   );
 }

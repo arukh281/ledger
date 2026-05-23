@@ -62,10 +62,10 @@ export default function PaytmPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="page max-w-3xl">
       <div>
         <h1 className="m-0">Paytm</h1>
-        <p className="m-0 mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="m-0 mt-1 text-sm text-muted">
           Upload a Paytm CSV to download the statement PDF.
         </p>
       </div>
@@ -93,7 +93,7 @@ export default function PaytmPage() {
             <Upload size={16} />
             {converting ? 'Converting…' : 'Choose CSV file'}
           </Button>
-          <p className="m-0 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="m-0 text-xs text-muted">
             Required columns: <span className="font-mono">Transaction_Date</span>,{' '}
             <span className="font-mono">Amount</span>
           </p>

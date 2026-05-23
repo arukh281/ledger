@@ -93,6 +93,7 @@ export function VendorCombobox({
       <input
         id={inputId}
         type="text"
+        role="combobox"
         autoComplete="off"
         value={query}
         onChange={e => handleQueryChange(e.target.value)}

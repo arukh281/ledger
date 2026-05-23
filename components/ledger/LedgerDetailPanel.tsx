@@ -97,23 +97,23 @@ export function LedgerDetailPanel({
   onRefreshEntries,
 }: LedgerDetailPanelProps) {
   return (
-    <div className="flex flex-col gap-8">
+    <>
       <div className="flex items-center gap-3 no-print">
-        <Button variant="ghost" onClick={onBack} className="shrink-0 px-2">
+        <Button variant="ghost" onClick={onBack} className="shrink-0 !px-2">
           <ArrowLeft size={16} />
-          Vendors
+          <span className="hidden sm:inline">Vendors</span>
         </Button>
-        <h1 className="m-0 text-lg">{config.title}</h1>
+        <h1 className="m-0 text-lg">Ledger</h1>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 no-print">
+      <div className="page-header page-header--row no-print">
         <div>
           <h2 className="m-0 text-base font-semibold">{vendor.name}</h2>
-          <p className="font-mono text-xs m-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="font-mono text-xs m-0 mt-0.5 text-muted">
             {config.identifierLabel}: {vendor.identifier || '—'}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button variant="outline" onClick={onOpenAddEntry}>
             <PlusCircle size={16} />
             Entry
@@ -157,12 +157,7 @@ export function LedgerDetailPanel({
         <div className="flex flex-col gap-4">
           <div>
             <label className="mb-2 block">Period</label>
-            <div
-              className="inline-flex rounded-lg border p-0.5 gap-0.5"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-              role="group"
-              aria-label="Ledger period"
-            >
+            <div className="segmented segmented--fill" role="group" aria-label="Ledger period">
               {(
                 [
                   { mode: 'all' as const, label: 'All dates' },
@@ -175,12 +170,7 @@ export function LedgerDetailPanel({
                   key={mode}
                   type="button"
                   onClick={() => onPeriodModeChange(mode)}
-                  className={[
-                    'px-3 py-1.5 text-sm font-medium rounded-md border transition-colors',
-                    periodMode === mode
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-transparent text-slate-700 border-transparent hover:bg-slate-100',
-                  ].join(' ')}
+                  className={['segmented-btn', periodMode === mode ? 'segmented-btn--active' : ''].join(' ')}
                 >
                   {label}
                 </button>
@@ -189,8 +179,8 @@ export function LedgerDetailPanel({
           </div>
 
           {periodMode === 'financial_year' && (
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1 min-w-[140px]">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-full sm:w-auto sm:min-w-[10rem] sm:max-w-[14rem]">
                 <label htmlFor="ledger-fy">Financial year</label>
                 <select
                   id="ledger-fy"
@@ -208,8 +198,8 @@ export function LedgerDetailPanel({
           )}
 
           {periodMode === 'month' && (
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1 min-w-[140px]">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-full sm:w-auto sm:min-w-[9rem] sm:max-w-[12rem]">
                 <label htmlFor="ledger-month">Month</label>
                 <select
                   id="ledger-month"
@@ -223,7 +213,7 @@ export function LedgerDetailPanel({
                   ))}
                 </select>
               </div>
-              <div className="flex-1 min-w-[100px]">
+              <div className="w-full sm:w-auto sm:min-w-[6rem] sm:max-w-[8rem]">
                 <label htmlFor="ledger-year">Year</label>
                 <select
                   id="ledger-year"
@@ -241,8 +231,8 @@ export function LedgerDetailPanel({
           )}
 
           {periodMode === 'custom' && (
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1 min-w-[140px]">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-full sm:w-auto sm:min-w-[9rem] sm:max-w-[11rem]">
                 <label htmlFor="from-date">From</label>
                 <input
                   id="from-date"
@@ -252,7 +242,7 @@ export function LedgerDetailPanel({
                   onChange={e => onFromDateChange(e.target.value)}
                 />
               </div>
-              <div className="flex-1 min-w-[140px]">
+              <div className="w-full sm:w-auto sm:min-w-[9rem] sm:max-w-[11rem]">
                 <label htmlFor="to-date">To</label>
                 <input
                   id="to-date"
@@ -278,9 +268,7 @@ export function LedgerDetailPanel({
       </Card>
 
       {entriesLoading ? (
-        <p className="m-0 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Loading…
-        </p>
+        <p className="m-0 text-sm text-muted">Loading…</p>
       ) : (
         <div className="no-print">
           <SummaryCards summary={summary} />
@@ -289,9 +277,10 @@ export function LedgerDetailPanel({
             onRefresh={onRefreshEntries}
             onEditEntry={onEditEntry}
             onDeleteEntry={actions.deleteEntry}
+            ledgerScope={config.scope}
           />
         </div>
       )}
-    </div>
+    </>
   );
 }

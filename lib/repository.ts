@@ -8,6 +8,7 @@
  */
 
 import { Vendor, LedgerEntry, ActionResult } from './types';
+import type { LedgerEntryBalanceSlice } from './ledgerMath';
 import { formatSupabaseDbError } from './supabaseErrors';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { getFirestoreDb } from './firebase';
@@ -227,6 +228,40 @@ export async function getEntriesByVendor(vendorId: string): Promise<LedgerEntry[
   }
 }
 
+/** All entries (minimal fields) for vendor list balances. */
+export async function getAllLedgerEntryBalances(): Promise<LedgerEntryBalanceSlice[]> {
+  let supabaseFail: string | null = null;
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = getSupabase();
+      const { data, error } = await sb
+        .from('ledger_entries')
+        .select('vendor_id, type, amount');
+      if (!error && data) return data as LedgerEntryBalanceSlice[];
+      supabaseFail = error?.message ?? 'Unknown Supabase error';
+      console.warn('Supabase read failed, falling back to Firebase:', supabaseFail);
+    } catch (e) {
+      supabaseFail = String(e);
+      console.warn('Supabase unreachable, falling back to Firebase:', e);
+    }
+  }
+  blockFirebaseFallbackOrThrow(supabaseFail);
+  try {
+    const db = getFirestoreDb();
+    const snap = await getDocs(collection(db, COL_ENTRIES));
+    return snap.docs.map(d => {
+      const row = d.data() as LedgerEntry;
+      return { vendor_id: row.vendor_id, type: row.type, amount: row.amount };
+    });
+  } catch (e) {
+    throw new Error(
+      supabaseFail
+        ? `Supabase failed (${supabaseFail}) and Firebase failed (${String(e)}).`
+        : String(e)
+    );
+  }
+}
+
 // ─── Ledger Entries: Writes ───────────────────────────────────────────────────
 
 export interface CreateEntryPayload {
@@ -338,6 +373,100 @@ export async function updateEntry(
     }
 
     return { success: true, data: entry };
+  } catch (e) {
+    return { success: false, error: `Unexpected error: ${String(e)}` };
+  }
+}
+
+export async function restoreEntry(entry: LedgerEntry): Promise<ActionResult<LedgerEntry>> {
+  try {
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('ledger_entries')
+      .insert({
+        id: entry.id,
+        vendor_id: entry.vendor_id,
+        type: entry.type,
+        date: entry.date,
+        amount: entry.amount,
+        doc_number: entry.doc_number,
+        notes: entry.notes,
+        is_system_generated: entry.is_system_generated,
+      })
+      .select()
+      .single();
+
+    if (error) return { success: false, error: formatSupabaseDbError(error.message) };
+
+    const restored = data as LedgerEntry;
+
+    if (!isFirebaseMirrorDisabled()) {
+      try {
+        const db = getFirestoreDb();
+        await setDoc(doc(db, COL_ENTRIES, restored.id), restored);
+      } catch (fbErr) {
+        console.error('Firebase mirror write failed (entry restore):', fbErr);
+        return {
+          success: false,
+          error: 'Restored in main database but backup sync failed.',
+        };
+      }
+    }
+
+    return { success: true, data: restored };
+  } catch (e) {
+    return { success: false, error: `Unexpected error: ${String(e)}` };
+  }
+}
+
+export async function restoreVendor(
+  vendor: Pick<Vendor, 'id' | 'name' | 'gstin'>,
+  entries: LedgerEntry[]
+): Promise<ActionResult> {
+  try {
+    const sb = getSupabase();
+    const { error: vendorErr } = await sb.from('vendors').insert({
+      id: vendor.id,
+      name: vendor.name,
+      gstin: vendor.gstin,
+    });
+    if (vendorErr) return { success: false, error: formatSupabaseDbError(vendorErr.message) };
+
+    for (const entry of entries) {
+      const { error: entryErr } = await sb.from('ledger_entries').insert({
+        id: entry.id,
+        vendor_id: entry.vendor_id,
+        type: entry.type,
+        date: entry.date,
+        amount: entry.amount,
+        doc_number: entry.doc_number,
+        notes: entry.notes,
+        is_system_generated: entry.is_system_generated,
+      });
+      if (entryErr) return { success: false, error: formatSupabaseDbError(entryErr.message) };
+    }
+
+    if (!isFirebaseMirrorDisabled()) {
+      try {
+        const db = getFirestoreDb();
+        await setDoc(doc(db, COL_VENDORS, vendor.id), {
+          ...vendor,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        for (const entry of entries) {
+          await setDoc(doc(db, COL_ENTRIES, entry.id), entry);
+        }
+      } catch (fbErr) {
+        console.error('Firebase mirror write failed (vendor restore):', fbErr);
+        return {
+          success: false,
+          error: 'Restored in main database but backup sync failed.',
+        };
+      }
+    }
+
+    return { success: true, data: undefined };
   } catch (e) {
     return { success: false, error: `Unexpected error: ${String(e)}` };
   }
