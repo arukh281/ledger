@@ -219,13 +219,26 @@ export function GstinDirectory() {
     });
   }
 
+  function directoryForPdf() {
+    return query.trim() ? filtered : directory;
+  }
+
+  function rowCountForScope(scope: GstinDirectoryPdfScope) {
+    return countGstinDirectoryRows(directoryForPdf(), scope);
+  }
+
   function openDownloadDialog() {
-    setDownloadScope('both');
+    const customerCount = rowCountForScope('customer');
+    const primaryCount = rowCountForScope('primary');
+    if (customerCount > 0 && primaryCount > 0) setDownloadScope('both');
+    else if (customerCount > 0) setDownloadScope('customer');
+    else if (primaryCount > 0) setDownloadScope('primary');
+    else setDownloadScope('both');
     setDownloadDialogOpen(true);
   }
 
   async function handleDownload(scope: GstinDirectoryPdfScope) {
-    const dir = query.trim() ? filtered : directory;
+    const dir = directoryForPdf();
     const count = countGstinDirectoryRows(dir, scope);
     if (count === 0) {
       toast.error(PDF_SCOPE_EMPTY_MESSAGES[scope]);
@@ -386,6 +399,7 @@ export function GstinDirectory() {
         open={downloadDialogOpen}
         onClose={() => setDownloadDialogOpen(false)}
         title="Download PDF"
+        panelMaxWidthClass="max-w-lg"
         actions={
           <>
             <Button variant="ghost" onClick={() => setDownloadDialogOpen(false)}>
@@ -394,6 +408,7 @@ export function GstinDirectory() {
             <Button
               onClick={() => void handleDownload(downloadScope)}
               loading={downloading}
+              disabled={rowCountForScope(downloadScope) === 0}
             >
               <Download size={16} />
               Download
@@ -401,38 +416,47 @@ export function GstinDirectory() {
           </>
         }
       >
-        <p className="m-0 text-sm text-muted">Which sections should this PDF include?</p>
+        <p className="m-0 text-sm text-muted">Choose which sections to include in the PDF.</p>
         <fieldset className="m-0 mt-3 flex flex-col gap-2 border-0 p-0">
           <legend className="sr-only">PDF sections to include</legend>
           {GSTIN_DIRECTORY_PDF_SCOPES.map(scope => {
-            const dir = query.trim() ? filtered : directory;
-            const rowCount = countGstinDirectoryRows(dir, scope);
+            const rowCount = rowCountForScope(scope);
             const selected = downloadScope === scope;
+            const disabled = rowCount === 0;
+            const countLabel = query.trim()
+              ? `${rowCount} matching`
+              : `${rowCount} firm${rowCount === 1 ? '' : 's'}`;
             return (
               <label
                 key={scope}
                 className={[
-                  'flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors',
-                  selected
+                  'choice-card rounded-lg border px-3 py-2.5 transition-colors',
+                  disabled ? 'choice-card--disabled' : '',
+                  selected && !disabled
                     ? 'border-[var(--primary)] bg-blue-50/60'
-                    : 'border-slate-200 hover:border-slate-300',
-                ].join(' ')}
+                    : 'border-slate-200',
+                  !disabled && !selected ? 'hover:border-slate-300' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               >
                 <input
                   type="radio"
                   name="gstin-pdf-scope"
                   value={scope}
                   checked={selected}
+                  disabled={disabled}
                   onChange={() => setDownloadScope(scope)}
-                  className="mt-1 shrink-0"
+                  className="mt-0.5 h-4 w-4"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-slate-900">
+                  <span className="block text-sm font-semibold text-slate-900">
                     {PDF_SCOPE_LABELS[scope]}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-500">
+                  <span className="mt-0.5 block text-xs leading-snug text-slate-500">
                     {PDF_SCOPE_DESCRIPTIONS[scope]}
-                    {query.trim() ? ` · ${rowCount} matching` : ` · ${rowCount} firm${rowCount === 1 ? '' : 's'}`}
+                    {' · '}
+                    {disabled ? 'none in current list' : countLabel}
                   </span>
                 </span>
               </label>

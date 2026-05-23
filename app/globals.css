@@ -193,12 +193,62 @@ input::placeholder, textarea::placeholder {
   color: var(--text-muted);
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+input[type='checkbox']:focus,
+input[type='radio']:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 label {
   display: block;
   font-weight: 500;
   margin-bottom: 0.25rem;
   color: var(--text-primary);
   font-size: 0.8125rem;
+}
+
+/* Card-style radio/checkbox rows (e.g. PDF scope picker) */
+label.choice-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  font-weight: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+label.choice-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .search-field {
