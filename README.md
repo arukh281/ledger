@@ -37,28 +37,24 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 2. Go to SQL Editor and run `supabase/schema.sql`, then `supabase/secondary-schema.sql` if using Secondary
 3. Copy the Project URL and anon key from Project Settings → API
 
-**Keep Supabase awake (Free tier):** Free projects pause after 7 days without API activity. This repo includes `.github/workflows/supabase-keepalive.yml`, which pings Supabase every Monday and Thursday. After pushing to GitHub, add repository secrets **Settings → Secrets and variables → Actions**:
+**Weekly check (Free tier keep-alive + app test):** Free Supabase projects pause after 7 days without API activity. `.github/workflows/supabase-keepalive.yml` runs **lint, build, and a Supabase ping** every **Monday and Thursday at 09:00 UTC**, and emails you the result. Add repository secrets in **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |--------|--------|
 | `SUPABASE_URL` | Your Project URL (same as `NEXT_PUBLIC_SUPABASE_URL`) |
 | `SUPABASE_ANON_KEY` | Your anon public key (same as `NEXT_PUBLIC_SUPABASE_ANON_KEY`) |
-
-You can also run the workflow manually from the **Actions** tab (**Supabase keep-alive** → **Run workflow**).
-
-**App health check (twice weekly):** `.github/workflows/app-healthcheck.yml` runs `npm test` (lint, build, Supabase connectivity) every **Tuesday and Friday at 09:00 UTC** and emails you the result. Add these repository secrets in addition to the Supabase ones above:
-
-| Secret | Value |
-|--------|--------|
 | `MAIL_SERVER` | SMTP host (e.g. `smtp.gmail.com`) |
-| `MAIL_PORT` | SMTP port (e.g. `587`) |
+| `MAIL_PORT` | `587` for Gmail. Use `465` only if you set `MAIL_SECURE=1` |
 | `MAIL_USERNAME` | SMTP login / sender email |
-| `MAIL_PASSWORD` | SMTP password or Gmail app password |
-| `MAIL_TO` | Your email address for notifications |
+| `MAIL_PASSWORD` | Gmail app password (16 chars, no spaces) |
+| `MAIL_TO` | Your email for pass/fail notifications |
 | `MAIL_FROM` | *(optional)* From header; defaults to `MAIL_USERNAME` |
-| `APP_URL` | *(optional)* Deployed app URL; also checks `GET /primary` |
+| `MAIL_SECURE` | *(optional)* Set to `1` only for port **465** |
+| `APP_URL` | *(optional)* Deployed URL; also checks `GET /primary` |
 
-Run manually from **Actions → App health check → Run workflow**, or locally with Supabase env vars set: `npm test`.
+Use the **HTTPS Project URL** (`https://xxxx.supabase.co`) — not the `postgres://` database string. Re-copy both Supabase values from Project Settings → API if you see HTTP 401.
+
+Run manually from **Actions → Weekly check → Run workflow**, or locally: `npm test` (with Supabase env vars set).
 
 **Firebase setup:**
 1. Create a free project at https://console.firebase.google.com
