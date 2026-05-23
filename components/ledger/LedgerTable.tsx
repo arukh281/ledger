@@ -6,7 +6,6 @@ import { Trash2, Pencil } from 'lucide-react';
 import { LedgerEntryWithBalance } from '@/lib/types';
 import { formatINR, formatDate } from '@/lib/validation';
 import { TypeBadge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog';
 import { useDeleteWithUndo } from '@/components/undo/UndoProvider';
 import type { LedgerScope } from '@/lib/types';

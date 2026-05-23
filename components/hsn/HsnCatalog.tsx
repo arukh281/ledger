@@ -21,7 +21,6 @@ import { CollapsibleSection } from '@/components/invoice/CollapsibleSection';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog';
-import { Dialog } from '@/components/ui/Dialog';
 import { SearchField } from '@/components/ui/SearchField';
 import { useDeleteWithUndo } from '@/components/undo/UndoProvider';
 

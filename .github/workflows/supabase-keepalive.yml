@@ -68,40 +68,11 @@ jobs:
         id: email
         env:
           CHECK_OUTCOME: ${{ steps.check.outcome }}
+          LOG_PATH: ${{ runner.temp }}/check.log
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          log="${RUNNER_TEMP}/check.log"
-          ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          body_file="${RUNNER_TEMP}/email-body.txt"
-
-          if [ "${CHECK_OUTCOME}" = "success" ]; then
-            {
-              echo "Tally daily check passed."
-              echo
-              echo "Time (UTC): ${ts}"
-              echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              echo
-              echo "Checks: lint, build, Supabase keep-alive"
-              if [ -n "${APP_URL:-}" ]; then
-                echo "Live app: ${APP_URL}/primary"
-              fi
-              echo
-              cat "${log}"
-            } > "${body_file}"
-            echo "subject=✅ Tally daily check OK (${ts})" >> "$GITHUB_OUTPUT"
-          else
-            {
-              echo "Tally daily check FAILED."
-              echo
-              echo "Time (UTC): ${ts}"
-              echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              echo
-              echo "--- Error log ---"
-              cat "${log}"
-            } > "${body_file}"
-            echo "subject=❌ Tally daily check FAILED (${ts})" >> "$GITHUB_OUTPUT"
-          fi
-
-          echo "body_file=${body_file}" >> "$GITHUB_OUTPUT"
+          export TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          node scripts/render-check-email.mjs
 
       - name: Send notification email
         if: always() && env.NOTIFY_TO != ''
@@ -115,7 +86,8 @@ jobs:
           to: ${{ secrets.MAIL_TO }}
           from: ${{ secrets.MAIL_FROM || secrets.MAIL_USERNAME }}
           secure: ${{ env.MAIL_SECURE == '1' || env.MAIL_SECURE == 'true' }}
-          body: file://${{ steps.email.outputs.body_file }}
+          html_body: file://${{ steps.email.outputs.html_body_file }}
+          body: file://${{ steps.email.outputs.text_body_file }}
 
       - name: Mail secrets reminder
         if: always() && env.NOTIFY_TO == ''
