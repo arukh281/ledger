@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
-import { Navbar } from '@/components/layout/Navbar';
+import { ConditionalNavbar } from '@/components/layout/ConditionalNavbar';
 import { AppProviders } from '@/components/providers/AppProviders';
 import './globals.css';
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geist.variable} h-full`}>
       <body className="min-h-full flex flex-col" style={{ background: 'var(--bg)' }}>
         <AppProviders>
-          <Navbar />
+          <ConditionalNavbar />
           <main className="flex-1 w-full min-w-0 max-w-5xl mx-auto px-4 py-5 sm:px-5 sm:py-8 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             {children}
           </main>
