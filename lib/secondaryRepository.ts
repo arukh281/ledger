@@ -1,5 +1,5 @@
 /**
- * Secondary ledger repository — separate tables from primary book.
+ * Secondary ledger repository — separate tables from party book.
  * Same Supabase + Firebase mirror strategy as lib/repository.ts.
  */
 

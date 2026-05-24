@@ -30,7 +30,7 @@ export function LedgerTable({
   vendorNames = {},
   onEditEntry,
   onDeleteEntry = actionDeleteEntry,
-  ledgerScope = 'primary',
+  ledgerScope = 'party',
 }: LedgerTableProps) {
   const registerDeleteUndo = useDeleteWithUndo();
   const [deleteTarget, setDeleteTarget] = useState<LedgerEntryWithBalance | null>(null);

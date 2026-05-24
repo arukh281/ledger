@@ -13,11 +13,11 @@ export interface WorkspaceMeta {
   normalizeIdentifier: (value: string) => string;
 }
 
-export const PRIMARY_META: WorkspaceMeta = {
-  scope: 'primary',
-  title: 'Primary',
+export const PARTY_META: WorkspaceMeta = {
+  scope: 'party',
+  title: 'Party',
   identifierLabel: 'GSTIN',
-  documentTitleBase: 'Primary',
+  documentTitleBase: 'Party',
   identifierPlaceholder: '15 characters',
   identifierInputClassName: 'font-mono',
   identifierMaxLength: 15,
@@ -36,5 +36,5 @@ export const SECONDARY_META: WorkspaceMeta = {
 };
 
 export function getWorkspaceMeta(scope: LedgerScope): WorkspaceMeta {
-  return scope === 'primary' ? PRIMARY_META : SECONDARY_META;
+  return scope === 'party' ? PARTY_META : SECONDARY_META;
 }

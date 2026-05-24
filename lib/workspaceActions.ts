@@ -52,7 +52,7 @@ export interface WorkspaceActions {
 }
 
 export function getWorkspaceActions(scope: LedgerScope): WorkspaceActions {
-  if (scope === 'primary') {
+  if (scope === 'party') {
     return {
       loadVendors: async () => {
         const [vendorRes, balanceRes] = await Promise.all([

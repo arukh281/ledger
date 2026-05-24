@@ -312,7 +312,7 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
         reloadVendors();
         registerDeleteUndo('Vendor removed', async () => {
           const restore =
-            scope === 'primary'
+            scope === 'party'
               ? await actionRestoreVendor(
                   { id: snapshot.id, name: snapshot.name, gstin: snapshot.identifier },
                   entries

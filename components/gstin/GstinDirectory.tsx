@@ -32,24 +32,24 @@ import { useDeleteWithUndo } from '@/components/undo/UndoProvider';
 
 const emptyDirectory = (): GstinDirectory => ({
   customer: [],
-  primary: [],
+  party: [],
 });
 
 const PDF_SCOPE_LABELS: Record<GstinDirectoryPdfScope, string> = {
   customer: 'Customer',
-  primary: 'Primary',
+  party: 'Party',
   both: 'Both',
 };
 
 const PDF_SCOPE_DESCRIPTIONS: Record<GstinDirectoryPdfScope, string> = {
   customer: 'Customers you manage in this directory',
-  primary: 'Primary vendors synced from the ledger',
-  both: 'Customer and primary sections in one PDF',
+  party: 'Party vendors synced from the ledger',
+  both: 'Customer and party sections in one PDF',
 };
 
 const PDF_SCOPE_EMPTY_MESSAGES: Record<GstinDirectoryPdfScope, string> = {
   customer: 'No customer firms to download.',
-  primary: 'No primary firms to download.',
+  party: 'No party firms to download.',
   both: 'Nothing to download.',
 };
 
@@ -140,14 +140,14 @@ export function GstinDirectory() {
   const filtered = useMemo(
     () => ({
       customer: filterRows(directory.customer, query),
-      primary: filterRows(directory.primary, query),
+      party: filterRows(directory.party, query),
     }),
     [directory, query]
   );
 
-  const totalCount = directory.customer.length + directory.primary.length;
+  const totalCount = directory.customer.length + directory.party.length;
 
-  const filteredCount = filtered.customer.length + filtered.primary.length;
+  const filteredCount = filtered.customer.length + filtered.party.length;
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
@@ -165,7 +165,7 @@ export function GstinDirectory() {
   }
 
   function startEdit(row: GstinRow) {
-    if (row.category === 'primary') return;
+    if (row.category === 'party') return;
     setEditingKey(gstinRowKey(row.category, row.id));
     setEditName(row.name);
     setEditGstin(row.gstin);
@@ -178,7 +178,7 @@ export function GstinDirectory() {
   }
 
   async function handleSaveEdit(row: GstinRow) {
-    if (row.category === 'primary') return;
+    if (row.category === 'party') return;
     setSavingEdit(true);
     const res = await actionUpdateGstinRow(row.category, row.id, {
       name: editName,
@@ -195,12 +195,12 @@ export function GstinDirectory() {
   }
 
   function requestDelete(row: GstinRow) {
-    if (row.category === 'primary') return;
+    if (row.category === 'party') return;
     setDeleteTarget(row);
   }
 
   async function handleDelete() {
-    if (!deleteTarget || deleteTarget.category === 'primary') return;
+    if (!deleteTarget || deleteTarget.category === 'party') return;
     const snapshot = deleteTarget;
     setDeleting(true);
     const res = await actionDeleteGstinRow(snapshot.category, snapshot.id);
@@ -230,7 +230,7 @@ export function GstinDirectory() {
 
   function availablePdfScopes(): GstinDirectoryPdfScope[] {
     const dir = directoryForPdf();
-    return gstinDirectoryPdfScopesForCounts(dir.customer.length, dir.primary.length);
+    return gstinDirectoryPdfScopesForCounts(dir.customer.length, dir.party.length);
   }
 
   function openDownloadDialog() {
@@ -245,7 +245,7 @@ export function GstinDirectory() {
     }
     const dir = directoryForPdf();
     setDownloadScope(
-      defaultGstinDirectoryPdfScope(dir.customer.length, dir.primary.length)
+      defaultGstinDirectoryPdfScope(dir.customer.length, dir.party.length)
     );
     setDownloadDialogOpen(true);
   }
@@ -295,7 +295,7 @@ export function GstinDirectory() {
         <div>
           <h1 className="m-0">GSTIN directory</h1>
           <p className="m-0 mt-1.5 text-sm text-muted leading-snug">
-            Customers you manage here; primary vendors are synced from the Primary ledger
+            Customers you manage here; party vendors are synced from the Party ledger
             (view only).
           </p>
         </div>
@@ -430,7 +430,7 @@ export function GstinDirectory() {
         }
       >
         <p className="m-0 text-sm text-muted">
-          Customer and primary both have firms — pick one section or export both.
+          Customer and party both have firms — pick one section or export both.
         </p>
         <fieldset className="m-0 mt-3 flex flex-col gap-2 border-0 p-0">
           <legend className="sr-only">PDF sections to include</legend>

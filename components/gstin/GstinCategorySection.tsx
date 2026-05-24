@@ -41,7 +41,7 @@ export function GstinCategorySection({
   onSaveEdit,
   onDelete,
 }: GstinCategorySectionProps) {
-  const readOnly = category === 'primary';
+  const readOnly = category === 'party';
 
   return (
     <section className="flex flex-col gap-2">
@@ -71,7 +71,7 @@ export function GstinCategorySection({
                   colSpan={readOnly ? 2 : 3}
                   className="py-6 px-4 text-center text-slate-500 text-sm"
                 >
-                  {readOnly ? 'No primary vendors yet' : 'No firms in this category'}
+                  {readOnly ? 'No party vendors yet' : 'No firms in this category'}
                 </td>
               </tr>
             ) : (

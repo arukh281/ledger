@@ -30,7 +30,7 @@ function LoginForm() {
         return;
       }
 
-      const from = searchParams.get('from') || '/primary';
+      const from = searchParams.get('from') || '/';
       router.replace(from);
       router.refresh();
     } catch {

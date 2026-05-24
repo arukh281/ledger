@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     "/api/gstin/directory-pdf": [pdfkitFontData],
   },
   async redirects() {
-    return [{ source: "/", destination: "/primary", permanent: false }];
+    return [{ source: "/primary", destination: "/party", permanent: false }];
   },
 };
 

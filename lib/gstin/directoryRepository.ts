@@ -1,5 +1,5 @@
 /**
- * GSTIN directory — aggregates customer firms and primary ledger vendors.
+ * GSTIN directory — aggregates customer firms and party ledger vendors.
  */
 
 import {
@@ -20,18 +20,18 @@ function sortByName(rows: GstinRow[]): GstinRow[] {
   return [...rows].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const PRIMARY_READ_ONLY_ERROR =
-  'Primary vendors are managed in the Primary ledger. Open /primary to add, edit, or delete them.';
+const PARTY_READ_ONLY_ERROR =
+  'Party vendors are managed in the Party ledger. Open /party to add, edit, or delete them.';
 
 export async function listGstinDirectory(): Promise<ActionResult<GstinDirectory>> {
   try {
-    const [customerRes, primaryVendors] = await Promise.all([listGstinCustomers(), getVendors()]);
+    const [customerRes, partyVendors] = await Promise.all([listGstinCustomers(), getVendors()]);
 
     if (!customerRes.success) return customerRes;
 
-    const primary: GstinRow[] = primaryVendors.map(v => ({
+    const party: GstinRow[] = partyVendors.map(v => ({
       id: v.id,
-      category: 'primary',
+      category: 'party',
       name: v.name,
       gstin: v.gstin,
     }));
@@ -40,7 +40,7 @@ export async function listGstinDirectory(): Promise<ActionResult<GstinDirectory>
       success: true,
       data: {
         customer: customerRes.data,
-        primary: sortByName(primary),
+        party: sortByName(party),
       },
     };
   } catch (e) {
@@ -53,7 +53,7 @@ export async function createGstinRow(
   payload: GstinRowPayload
 ): Promise<ActionResult<GstinRow>> {
   if (category === 'customer') return createGstinCustomer(payload);
-  return { success: false, error: PRIMARY_READ_ONLY_ERROR };
+  return { success: false, error: PARTY_READ_ONLY_ERROR };
 }
 
 export async function updateGstinRow(
@@ -62,7 +62,7 @@ export async function updateGstinRow(
   payload: GstinRowPayload
 ): Promise<ActionResult<GstinRow>> {
   if (category === 'customer') return updateGstinCustomer(id, payload);
-  return { success: false, error: PRIMARY_READ_ONLY_ERROR };
+  return { success: false, error: PARTY_READ_ONLY_ERROR };
 }
 
 export async function deleteGstinRow(
@@ -74,12 +74,12 @@ export async function deleteGstinRow(
     if (!res.success) return res;
     return { success: true, data: undefined };
   }
-  return { success: false, error: PRIMARY_READ_ONLY_ERROR };
+  return { success: false, error: PARTY_READ_ONLY_ERROR };
 }
 
 export async function restoreGstinRow(row: GstinRow): Promise<ActionResult<GstinRow>> {
   if (row.category === 'customer') return restoreGstinCustomer(row);
-  return { success: false, error: PRIMARY_READ_ONLY_ERROR };
+  return { success: false, error: PARTY_READ_ONLY_ERROR };
 }
 
 export function validateGstinRowPayload(
@@ -87,5 +87,5 @@ export function validateGstinRowPayload(
   payload: GstinRowPayload
 ): string | null {
   if (category === 'customer') return validateGstinCustomerPayload(payload);
-  return PRIMARY_READ_ONLY_ERROR;
+  return PARTY_READ_ONLY_ERROR;
 }

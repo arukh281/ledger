@@ -11,7 +11,7 @@ interface SegmentedChoiceProps<T extends string> {
   onChange: (value: T) => void;
   name: string;
   className?: string;
-  /** Tighter pills that size to label (e.g. Primary / Secondary book switch). */
+  /** Tighter pills that size to label (e.g. Party / Secondary book switch). */
   compact?: boolean;
   /** Stretch segments on small screens (e.g. period filter). */
   fill?: boolean;

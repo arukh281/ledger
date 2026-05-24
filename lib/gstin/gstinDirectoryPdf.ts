@@ -41,15 +41,15 @@ export function gstinDirectoryPdfFilename(
   const base =
     scope === 'customer'
       ? 'gstin-customers'
-      : scope === 'primary'
-        ? 'gstin-primary'
+      : scope === 'party'
+        ? 'gstin-party'
         : 'gstin-directory';
   return filtered ? `${base}-filtered.pdf` : `${base}.pdf`;
 }
 
 function categoriesForScope(scope: GstinDirectoryPdfScope): GstinCategory[] {
   if (scope === 'customer') return ['customer'];
-  if (scope === 'primary') return ['primary'];
+  if (scope === 'party') return ['party'];
   return GSTIN_CATEGORY_ORDER;
 }
 
@@ -173,9 +173,9 @@ export async function gstinDirectoryToPdf(
   const sectionLabel =
     scope === 'customer'
       ? 'Customers'
-      : scope === 'primary'
-        ? 'Primary'
-        : 'Customer & primary';
+      : scope === 'party'
+        ? 'Party'
+        : 'Customer & party';
   const scopeLabel = filtered ? `Filtered · ${sectionLabel}` : sectionLabel;
   doc.text(`${scopeLabel} · ${total} firm${total === 1 ? '' : 's'}`, MARGIN, y);
   y += 22;

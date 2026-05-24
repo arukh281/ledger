@@ -1,10 +1,10 @@
-export type GstinCategory = 'customer' | 'primary';
+export type GstinCategory = 'customer' | 'party';
 
-export const GSTIN_CATEGORY_ORDER: GstinCategory[] = ['customer', 'primary'];
+export const GSTIN_CATEGORY_ORDER: GstinCategory[] = ['customer', 'party'];
 
 export const GSTIN_CATEGORY_LABELS: Record<GstinCategory, string> = {
   customer: 'Customer',
-  primary: 'Primary',
+  party: 'Party',
 };
 
 export interface GstinRow {
@@ -16,7 +16,7 @@ export interface GstinRow {
 
 export interface GstinDirectory {
   customer: GstinRow[];
-  primary: GstinRow[];
+  party: GstinRow[];
 }
 
 export interface GstinRowPayload {
@@ -29,11 +29,11 @@ export function gstinRowKey(category: GstinCategory, id: string): string {
 }
 
 /** Which GSTIN directory sections to include in a PDF export. */
-export type GstinDirectoryPdfScope = 'customer' | 'primary' | 'both';
+export type GstinDirectoryPdfScope = 'customer' | 'party' | 'both';
 
 export const GSTIN_DIRECTORY_PDF_SCOPES: GstinDirectoryPdfScope[] = [
   'customer',
-  'primary',
+  'party',
   'both',
 ];
 
@@ -42,28 +42,28 @@ export function countGstinDirectoryRows(
   scope: GstinDirectoryPdfScope
 ): number {
   if (scope === 'customer') return directory.customer.length;
-  if (scope === 'primary') return directory.primary.length;
-  return directory.customer.length + directory.primary.length;
+  if (scope === 'party') return directory.party.length;
+  return directory.customer.length + directory.party.length;
 }
 
-/** PDF scope choices that apply for the current customer/primary counts. */
+/** PDF scope choices that apply for the current customer/party counts. */
 export function gstinDirectoryPdfScopesForCounts(
   customerCount: number,
-  primaryCount: number
+  partyCount: number
 ): GstinDirectoryPdfScope[] {
   const hasCustomer = customerCount > 0;
-  const hasPrimary = primaryCount > 0;
-  if (hasCustomer && hasPrimary) return ['customer', 'primary', 'both'];
+  const hasParty = partyCount > 0;
+  if (hasCustomer && hasParty) return ['customer', 'party', 'both'];
   if (hasCustomer) return ['customer'];
-  if (hasPrimary) return ['primary'];
+  if (hasParty) return ['party'];
   return [];
 }
 
 export function defaultGstinDirectoryPdfScope(
   customerCount: number,
-  primaryCount: number
+  partyCount: number
 ): GstinDirectoryPdfScope {
-  const scopes = gstinDirectoryPdfScopesForCounts(customerCount, primaryCount);
+  const scopes = gstinDirectoryPdfScopesForCounts(customerCount, partyCount);
   if (scopes.includes('both')) return 'both';
   return scopes[0] ?? 'both';
 }

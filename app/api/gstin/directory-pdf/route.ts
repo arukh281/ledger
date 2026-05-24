@@ -40,9 +40,9 @@ function isValidBody(body: unknown): body is DirectoryPdfBody {
   const d = dir as Record<string, unknown>;
   return (
     Array.isArray(d.customer) &&
-    Array.isArray(d.primary) &&
+    Array.isArray(d.party) &&
     d.customer.every(isGstinRow) &&
-    d.primary.every(isGstinRow)
+    d.party.every(isGstinRow)
   );
 }
 

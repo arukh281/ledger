@@ -7,7 +7,7 @@ import { BookOpen, FileText, Hash, IdCard, Wallet } from 'lucide-react';
 
 const links = [
   { href: '/paytm', label: 'Paytm', icon: Wallet },
-  { href: '/primary', label: 'Ledger', icon: BookOpen, match: ['/primary', '/secondary'] },
+  { href: '/party', label: 'Ledger', icon: BookOpen, match: ['/party', '/secondary'] },
   { href: '/invoice', label: 'Invoice', icon: FileText },
   { href: '/hsn', label: 'HSN', icon: Hash },
   { href: '/gstin', label: 'GSTIN', icon: IdCard },
@@ -33,7 +33,7 @@ export function Navbar() {
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-5 flex items-center gap-3 h-14 min-h-[3.5rem]">
         <Link
-          href="/primary"
+          href="/"
           className="shrink-0 font-semibold tracking-tight no-underline text-[0.9375rem]"
           style={{ color: 'var(--nav-active)' }}
         >
