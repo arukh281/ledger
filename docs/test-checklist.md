@@ -7,14 +7,21 @@ Use this checklist to verify the app is working correctly after setup.
 - [ ] Supabase schema (`supabase/schema.sql`) has been executed in the SQL Editor
 - [ ] Secondary schema (`supabase/secondary-schema.sql`) has been executed if using Secondary
 - [ ] Firebase Firestore has been created and rules allow read/write
-- [ ] App is running: `npm run dev` → http://localhost:3000 (redirects to `/primary`)
+- [ ] App is running: `npm run dev` → http://localhost:3000 (home service picker)
 
 ---
 
-## 1. Primary — Vendor CRUD
+## 0. Home
+
+- [ ] Open `/` — five service cards: Paytm, Ledger, Invoice, HSN, GSTIN
+- [ ] Each card navigates to the correct module
+
+---
+
+## 1. Party — Vendor CRUD
 
 ### Add Vendor
-- [ ] Navigate to **Primary**
+- [ ] Navigate to **Ledger** (`/party`) or open Party from home
 - [ ] Click **Add vendor**
 - [ ] Enter a valid name and GSTIN (e.g. `29ABCDE1234F1Z5`)
 - [ ] Save — confirm success toast
@@ -35,7 +42,7 @@ Use this checklist to verify the app is working correctly after setup.
 
 ---
 
-## 2. Primary — Entries
+## 2. Party — Entries
 
 - [ ] Add invoice and payment entries
 - [ ] Edit and delete entries
@@ -47,7 +54,7 @@ Use this checklist to verify the app is working correctly after setup.
 
 ## 3. Secondary
 
-- [ ] Navigate to **Secondary**
+- [ ] Navigate to **Secondary** (from Ledger scope switcher or `/secondary`)
 - [ ] Add vendor with name + free-text **Ref**
 - [ ] Open ledger via book icon, add entries
 
@@ -61,7 +68,17 @@ Use this checklist to verify the app is working correctly after setup.
 
 ---
 
-## 5. Navigation
+## 5. Invoice, HSN, GSTIN
 
-- [ ] Navbar shows Paytm, Secondary, Primary only
+- [ ] **Invoice** — list, create at `/invoice/new`, download PDF
+- [ ] **HSN** — catalog CRUD, search, PDF export
+- [ ] **GSTIN** — customer firms editable; party section read-only from ledger
+
+---
+
+## 6. Navigation
+
+- [ ] Navbar shows Paytm, Ledger, Invoice, HSN, GSTIN on service pages
+- [ ] **Tally** in navbar returns to home `/`
+- [ ] `/primary` redirects to `/party`
 - [ ] `/ledger` and `/vendors` are not available (404)

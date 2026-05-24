@@ -13,7 +13,7 @@
 # Optional:
 #   MAIL_FROM          — From header (defaults to MAIL_USERNAME)
 #   MAIL_SECURE        — set to 1 only when using port 465
-#   APP_URL            — deployed app URL; also checks GET /primary
+#   APP_URL            — deployed app URL; also checks GET / and GET /party
 
 name: Daily check
 

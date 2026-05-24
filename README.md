@@ -4,12 +4,12 @@ A digital vendor account ledger built with Next.js — designed for ease of use 
 
 ## Features
 
-- **Primary ledger** — vendors with GSTIN; vendor list → open ledger via book icon
+- **Party ledger** — vendors with GSTIN; vendor list → open ledger via book icon
 - **Secondary ledger** — separate book with free-text `ref` per vendor (run `supabase/secondary-schema.sql`)
 - **Paytm** — CSV upload → statement PDF (ported from legacy Python tool)
 - **Invoice** — create and edit tax invoices; download PDF
 - **HSN catalog** — item names, HSN codes, and GST rates; search and PDF export
-- **GSTIN directory** — customer firms you manage; primary vendors synced from the Primary ledger (view only); PDF export with section picker when both customer and primary have firms
+- **GSTIN directory** — customer firms you manage; party vendors synced from the Party ledger (view only); PDF export with section picker when both customer and party have firms
 - **Transaction logging** — invoice and payment entries, running balance, period filters
 - **Write-off** — one-click balance nil adjustment
 - **Print / PDF** — printable vendor statement; formal bordered PDFs for HSN and GSTIN lists
@@ -58,7 +58,7 @@ Edit `.env.local` with your Supabase and Firebase project credentials.
 | `MAIL_TO` | Your email for pass/fail notifications |
 | `MAIL_FROM` | *(optional)* From header; defaults to `MAIL_USERNAME` |
 | `MAIL_SECURE` | *(optional)* Set to `1` only for port **465** |
-| `APP_URL` | *(optional)* Deployed URL; also checks `GET /primary` |
+| `APP_URL` | *(optional)* Deployed URL; health check hits `GET /` and `GET /party` |
 
 Use the **HTTPS Project URL** (`https://xxxx.supabase.co`) — not the `postgres://` database string. Re-copy both Supabase values from Project Settings → API if you see HTTP 401.
 
@@ -84,17 +84,18 @@ Open http://localhost:3000
 
 | Page | URL | Purpose |
 |------|-----|---------|
-| Primary | `/primary` | Vendor list → ledger (GSTIN vendors, existing data) |
+| Home | `/` | Service picker (links to all modules) |
+| Party | `/party` | Vendor list → ledger (GSTIN vendors, existing data) |
 | Secondary | `/secondary` | Vendor list → ledger (separate book, free-text ref) |
 | Paytm | `/paytm` | CSV upload → statement PDF |
 | Invoice | `/invoice` | List invoices; create at `/invoice/new` |
 | HSN | `/hsn` | HSN / GST catalog; download PDF |
-| GSTIN | `/gstin` | Customer + primary GSTIN directory; download PDF |
+| GSTIN | `/gstin` | Customer + party GSTIN directory; download PDF |
 
 ### GSTIN PDF export
 
-- **Customers only** or **primary only** — downloads immediately (no section picker).
-- **Both sections have firms** — choose Customer, Primary, or Both in the dialog.
+- **Customers only** or **party only** — downloads immediately (no section picker).
+- **Both sections have firms** — choose Customer, Party, or Both in the dialog.
 - **Search active** — PDF uses filtered rows; firm counts in the dialog reflect the filter.
 
 ---

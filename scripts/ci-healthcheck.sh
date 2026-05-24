@@ -94,10 +94,11 @@ curl_check "Supabase PostgREST" "${auth[@]}" -H "Accept: application/json" \
 if [ -n "${APP_URL:-}" ]; then
   step "Live app (${APP_URL})"
   live="${APP_URL%/}"
+  live="${live%/party}"
   live="${live%/primary}"
 
   live_ok=""
-  for path in "/primary" "/"; do
+  for path in "/" "/party"; do
     code="$(curl -sS -L -o /dev/null -w "%{http_code}" "${live}${path}" || echo "000")"
     echo "GET ${path} → ${code}"
     if [ "${code}" = "200" ]; then

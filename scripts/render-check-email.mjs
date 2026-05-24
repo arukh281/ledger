@@ -39,7 +39,8 @@ function detectChecks(logText) {
   const supabaseOk = /GoTrue/.test(logText) || /Supabase auth health/.test(logText);
   const liveOk =
     !appUrl ||
-    /GET \/primary → 200/.test(logText) ||
+    /GET \/party → 200/.test(logText) ||
+    /GET \/ → 200/.test(logText) ||
     (/=== Live app/.test(logText) && !/Live app check failed/.test(logText));
 
   return [
@@ -55,7 +56,7 @@ function detectChecks(logText) {
       ok: liveOk,
       detail: appUrl
         ? liveOk
-          ? `${appUrl}/primary responded`
+          ? `${appUrl} responded`
           : "Site unreachable"
         : "Skipped (no APP_URL)",
     },
@@ -116,7 +117,7 @@ const statusMessage = success
 
 const checkRows = checks.map(checkRow).join("");
 const appLink = appUrl
-  ? `<a href="${escapeHtml(appUrl)}/primary" style="color:#1d4ed8;text-decoration:none;">${escapeHtml(appUrl)}</a>`
+  ? `<a href="${escapeHtml(appUrl)}" style="color:#1d4ed8;text-decoration:none;">${escapeHtml(appUrl)}</a>`
   : "Not configured";
 
 const logBlock = success
