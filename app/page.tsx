@@ -19,7 +19,7 @@ export default function HomePage() {
           <li key={href}>
             <Link
               href={href}
-              className="flex flex-col items-center justify-center gap-2 rounded-lg border p-5 no-underline transition-colors min-h-[var(--touch-min)] hover:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border p-5 no-underline min-h-[var(--touch-min)] transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
               style={{
                 background: 'var(--surface)',
                 borderColor: 'var(--border)',

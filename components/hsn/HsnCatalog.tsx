@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Check, Download, Hash, Pencil, Plus, Trash2, X } from 'lucide-react';
 import {
@@ -89,6 +89,7 @@ export function HsnCatalog() {
   const [downloading, setDownloading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<HsnCatalogItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deferredQuery = useDeferredValue(query);
 
   async function loadCatalog() {
     const res = await actionListHsnCatalog();
@@ -119,7 +120,7 @@ export function HsnCatalog() {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     if (!q) return items;
     return items.filter(
       row =>
@@ -127,7 +128,7 @@ export function HsnCatalog() {
         row.hsn.includes(q) ||
         (row.gst_rate !== null && String(row.gst_rate).includes(q))
     );
-  }, [items, query]);
+  }, [items, deferredQuery]);
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();

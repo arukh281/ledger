@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { actionGetInvoice } from '@/app/actions/invoice';
 import type { InvoiceWithLines } from '@/lib/invoice/types';
 import { InvoiceForm } from '@/components/invoice/InvoiceForm';
+import { Card } from '@/components/ui/Card';
 
 export default function EditInvoicePage() {
   const params = useParams();
@@ -33,7 +34,22 @@ export default function EditInvoicePage() {
   }, [id]);
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading invoice…</p>;
+    return (
+      <div className="max-w-5xl flex flex-col gap-4" aria-hidden>
+        <div className="space-y-3 animate-pulse">
+          <div className="h-4 w-28 rounded-full bg-[oklch(92%_0.008_250)]" />
+          <div className="h-7 w-40 rounded-full bg-[oklch(92%_0.008_250)]" />
+          <div className="h-4 w-64 max-w-full rounded-full bg-[oklch(92%_0.008_250)]" />
+        </div>
+        <Card className="animate-pulse">
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-11 rounded-lg bg-[oklch(92%_0.008_250)]" />
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   if (error || !invoice) {

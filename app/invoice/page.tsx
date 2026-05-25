@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { FileText, Plus, Trash2 } from 'lucide-react';
 import {
@@ -37,7 +36,6 @@ function sortInvoices(items: InvoiceListItem[]): InvoiceListItem[] {
 }
 
 export default function InvoiceListPage() {
-  const router = useRouter();
   const registerDeleteUndo = useDeleteWithUndo();
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +107,24 @@ export default function InvoiceListPage() {
         </Link>
       </header>
 
-      {loading && <p className="m-0 text-sm text-muted">Loading invoices…</p>}
+      {loading && (
+        <div className="flex flex-col gap-2" aria-hidden>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="flex items-center gap-4 py-3.5 animate-pulse">
+              <div className="flex-1 min-w-0">
+                <div className="h-4 w-24 rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-2 h-3 w-40 max-w-full rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-2 h-3 w-20 rounded-full bg-[oklch(92%_0.008_250)]" />
+              </div>
+              <div className="hidden sm:block w-24 shrink-0">
+                <div className="ml-auto h-3 w-10 rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-2 ml-auto h-4 w-20 rounded-full bg-[oklch(92%_0.008_250)]" />
+              </div>
+              <div className="h-10 w-10 shrink-0 rounded-md bg-[oklch(92%_0.008_250)]" />
+            </Card>
+          ))}
+        </div>
+      )}
 
       {error && (
         <p className="m-0 text-sm font-medium text-red-600 rounded-lg bg-red-50 px-4 py-3">
@@ -139,19 +154,18 @@ export default function InvoiceListPage() {
       {!loading && !error && invoices.length > 0 && (
         <ul className="m-0 p-0 list-none flex flex-col gap-2">
           {invoices.map(inv => (
-            <li key={inv.id}>
+            <li key={inv.id} className="[content-visibility:auto] [contain-intrinsic-size:5.5rem]">
               <Card className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 py-3.5">
-                <button
-                  type="button"
-                  onClick={() => router.push(`/invoice/${inv.id}`)}
-                  className="flex-1 min-w-0 text-left border-0 bg-transparent p-0 cursor-pointer rounded-md transition-opacity hover:opacity-90"
+                <Link
+                  href={`/invoice/${inv.id}`}
+                  className="flex-1 min-w-0 text-left no-underline rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
                 >
                   <p className="m-0 font-semibold tabular-nums text-sm">#{inv.invoice_no}</p>
                   <p className="m-0 mt-0.5 text-sm text-muted truncate">
                     {inv.bill_to_company || 'No company name'}
                   </p>
                   <p className="m-0 mt-1 text-xs text-muted">{formatDate(inv.invoice_date)}</p>
-                </button>
+                </Link>
                 <div className="shrink-0 text-right sm:min-w-[6.5rem]">
                   <p className="text-xs m-0 text-muted">Total</p>
                   <p className="text-sm font-semibold font-mono tabular-nums m-0 mt-0.5">

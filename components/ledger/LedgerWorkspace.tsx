@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useDeferredValue, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { LedgerEntry, LedgerScope } from '@/lib/types';
 import { computeLedger } from '@/lib/ledgerMath';
@@ -112,12 +112,16 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
     };
   }, [selectedVendorId, entriesKey, actions]);
 
+  const deferredVendorSearch = useDeferredValue(vendorSearch);
   const filteredVendors = useMemo(
-    () => filterVendors(vendors, vendorSearch),
-    [vendors, vendorSearch]
+    () => filterVendors(vendors, deferredVendorSearch),
+    [vendors, deferredVendorSearch]
   );
 
-  const selectedVendor = vendors.find(v => v.id === selectedVendorId) ?? null;
+  const selectedVendor = useMemo(
+    () => vendors.find(v => v.id === selectedVendorId) ?? null,
+    [vendors, selectedVendorId]
+  );
 
   const yearOptions = useMemo(() => buildYearOptions(allEntries), [allEntries]);
   const financialYearOptions = useMemo(
@@ -158,10 +162,9 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
     return { from: fromDate || null, to: toDate || null };
   }, [periodMode, financialYearStart, financialYearOptions, calendarYear, calendarMonth, fromDate, toDate]);
 
-  const { entries: filteredEntries, summary } = computeLedger(
-    allEntries,
-    effectiveRange.from,
-    effectiveRange.to
+  const { entries: filteredEntries, summary } = useMemo(
+    () => computeLedger(allEntries, effectiveRange.from, effectiveRange.to),
+    [allEntries, effectiveRange.from, effectiveRange.to]
   );
 
   const fullLedger = useMemo(() => computeLedger(allEntries, null, null), [allEntries]);

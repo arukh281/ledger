@@ -31,15 +31,8 @@ export function Navbar() {
       className="no-print sticky top-0 z-30 border-b border-white/10"
       style={{ background: 'var(--nav-bg)', color: 'var(--nav-text)' }}
     >
-      <div className="max-w-5xl mx-auto px-4 sm:px-5 flex items-center gap-3 h-14 min-h-[3.5rem]">
-        <Link
-          href="/"
-          className="shrink-0 font-semibold tracking-tight no-underline text-[0.9375rem]"
-          style={{ color: 'var(--nav-active)' }}
-        >
-          Tally
-        </Link>
-        <ul className="flex flex-1 min-w-0 gap-0.5 m-0 p-0 list-none overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-end">
+      <div className="max-w-5xl mx-auto px-4 sm:px-5 flex items-center h-14 min-h-[3.5rem]">
+        <ul className="flex w-full min-w-0 gap-0.5 m-0 p-0 list-none overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start sm:justify-center">
           {links.map(({ href, label, icon: Icon, match }) => {
             const active = mounted && isActive(pathname, href, match);
             return (

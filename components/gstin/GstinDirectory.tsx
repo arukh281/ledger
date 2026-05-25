@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Download, IdCard, Plus } from 'lucide-react';
 import {
@@ -108,6 +108,7 @@ export function GstinDirectory() {
   const [downloading, setDownloading] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [downloadScope, setDownloadScope] = useState<GstinDirectoryPdfScope>('both');
+  const deferredQuery = useDeferredValue(query);
 
   async function loadDirectory() {
     const res = await actionListGstinDirectory();
@@ -139,10 +140,10 @@ export function GstinDirectory() {
 
   const filtered = useMemo(
     () => ({
-      customer: filterRows(directory.customer, query),
-      party: filterRows(directory.party, query),
+      customer: filterRows(directory.customer, deferredQuery),
+      party: filterRows(directory.party, deferredQuery),
     }),
-    [directory, query]
+    [directory, deferredQuery]
   );
 
   const totalCount = directory.customer.length + directory.party.length;

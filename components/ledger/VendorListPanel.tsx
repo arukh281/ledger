@@ -90,7 +90,25 @@ export function VendorListPanel({
       </Card>
 
       {vendorsLoading ? (
-        <p className="m-0 text-sm text-center py-10 text-muted">Loading…</p>
+        <div className="flex flex-col gap-2" aria-hidden>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="flex items-center gap-4 py-3.5 animate-pulse">
+              <div className="flex-1 min-w-0">
+                <div className="h-4 w-32 rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-2 h-3 w-40 max-w-full rounded-full bg-[oklch(92%_0.008_250)]" />
+              </div>
+              <div className="hidden sm:block w-24 shrink-0">
+                <div className="ml-auto h-3 w-12 rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-2 ml-auto h-4 w-20 rounded-full bg-[oklch(92%_0.008_250)]" />
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <div className="h-10 w-10 rounded-md bg-[oklch(92%_0.008_250)]" />
+                <div className="h-10 w-10 rounded-md bg-[oklch(92%_0.008_250)]" />
+                <div className="h-10 w-10 rounded-md bg-[oklch(92%_0.008_250)]" />
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : filteredVendors.length === 0 ? (
         <Card>
           <div className="empty-state !py-8">
@@ -108,7 +126,10 @@ export function VendorListPanel({
       ) : (
         <div className="flex flex-col gap-2">
           {filteredVendors.map(v => (
-            <Card key={v.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 py-3.5">
+            <Card
+              key={v.id}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 py-3.5 [content-visibility:auto] [contain-intrinsic-size:5.5rem]"
+            >
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate m-0">{v.name}</p>
                 <p className="font-mono text-xs m-0 mt-0.5 truncate text-muted">

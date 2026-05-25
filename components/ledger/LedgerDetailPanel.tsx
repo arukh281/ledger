@@ -268,7 +268,24 @@ export function LedgerDetailPanel({
       </Card>
 
       {entriesLoading ? (
-        <p className="m-0 text-sm text-muted">Loading…</p>
+        <div className="flex flex-col gap-3" aria-hidden>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="animate-pulse px-3 py-3">
+                <div className="h-3 w-16 rounded-full bg-[oklch(92%_0.008_250)]" />
+                <div className="mt-3 h-5 w-24 rounded-full bg-[oklch(92%_0.008_250)]" />
+              </Card>
+            ))}
+          </div>
+          <Card className="animate-pulse">
+            <div className="space-y-3">
+              <div className="h-4 w-32 rounded-full bg-[oklch(92%_0.008_250)]" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="h-10 rounded-lg bg-[oklch(92%_0.008_250)]" />
+              ))}
+            </div>
+          </Card>
+        </div>
       ) : (
         <div className="no-print">
           <SummaryCards summary={summary} />

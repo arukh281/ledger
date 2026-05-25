@@ -22,44 +22,41 @@ export function computeLedger(
   fromDate: string | null,
   toDate: string | null
 ): { entries: LedgerEntryWithBalance[]; summary: LedgerSummary } {
-  // Split: entries before the range (for opening balance) vs. entries in range
-  const beforeRange: LedgerEntry[] = [];
-  const inRange: LedgerEntry[] = [];
+  let opening_balance = 0;
+  let running_balance = 0;
+  let total_invoiced = 0;
+  let total_paid = 0;
+  const entries: LedgerEntryWithBalance[] = [];
 
-  for (const e of allEntries) {
-    const beforeFrom = fromDate ? e.date < fromDate : false;
-    const afterTo = toDate ? e.date > toDate : false;
+  for (const entry of allEntries) {
+    const contribution = entryContribution(entry);
+    const beforeFrom = fromDate ? entry.date < fromDate : false;
+    const afterTo = toDate ? entry.date > toDate : false;
 
     if (beforeFrom) {
-      beforeRange.push(e);
-    } else if (!afterTo) {
-      inRange.push(e);
+      opening_balance += contribution;
+      continue;
     }
-    // entries after toDate are just ignored
+
+    if (afterTo) {
+      continue;
+    }
+
+    if (entries.length === 0) {
+      running_balance = opening_balance;
+    }
+
+    running_balance += contribution;
+    entries.push({ ...entry, running_balance });
+
+    if (entry.type === 'invoice') {
+      total_invoiced += entry.amount;
+    } else {
+      total_paid += entry.amount;
+    }
   }
 
-  // Opening balance = sum of all contributions before the `from` date
-  const opening_balance = beforeRange.reduce(
-    (acc, e) => acc + entryContribution(e),
-    0
-  );
-
-  // Compute running balance for entries in range
-  let running = opening_balance;
-  const entries: LedgerEntryWithBalance[] = inRange.map(e => {
-    running += entryContribution(e);
-    return { ...e, running_balance: running };
-  });
-
-  const total_invoiced = inRange
-    .filter(e => e.type === 'invoice')
-    .reduce((acc, e) => acc + e.amount, 0);
-
-  const total_paid = inRange
-    .filter(e => e.type === 'payment')
-    .reduce((acc, e) => acc + e.amount, 0);
-
-  const closing_balance = opening_balance + total_invoiced - total_paid;
+  const closing_balance = entries.length === 0 ? opening_balance : running_balance;
 
   return {
     entries,
