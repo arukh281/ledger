@@ -32,6 +32,12 @@ import { actionRestoreVendor } from '@/app/actions/ledger';
 import { actionRestoreSecondaryVendor } from '@/app/actions/secondaryLedger';
 
 const emptyVendorForm: VendorFormState = { name: '', identifier: '' };
+const workspaceVendorCache: Partial<Record<LedgerScope, WorkspaceVendorRow[]>> = {};
+const workspaceEntryCache = new Map<string, LedgerEntry[]>();
+
+function entryCacheKey(scope: LedgerScope, vendorId: string): string {
+  return `${scope}:${vendorId}`;
+}
 
 interface LedgerWorkspaceProps {
   scope: LedgerScope;
@@ -72,15 +78,32 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
   const [vendorDeleteTarget, setVendorDeleteTarget] = useState<WorkspaceVendorRow | null>(null);
   const [vendorDeleting, setVendorDeleting] = useState(false);
 
-  const reloadVendors = useCallback(() => setRefreshKey(k => k + 1), []);
-  const refreshEntries = useCallback(() => setEntriesKey(k => k + 1), []);
+  const reloadVendors = useCallback(() => {
+    delete workspaceVendorCache[scope];
+    setRefreshKey(k => k + 1);
+  }, [scope]);
+  const refreshEntries = useCallback(() => {
+    if (selectedVendorId) {
+      workspaceEntryCache.delete(entryCacheKey(scope, selectedVendorId));
+    }
+    delete workspaceVendorCache[scope];
+    setEntriesKey(k => k + 1);
+  }, [scope, selectedVendorId]);
 
   useEffect(() => {
+    const cachedVendors = workspaceVendorCache[scope];
+    if (cachedVendors) {
+      setVendors(cachedVendors);
+      setVendorsLoading(false);
+      return;
+    }
+
     let active = true;
     setVendorsLoading(true);
     actions
       .loadVendors()
       .then(data => {
+        workspaceVendorCache[scope] = data;
         if (active) setVendors(data);
       })
       .catch(e => {
@@ -92,25 +115,37 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
     return () => {
       active = false;
     };
-  }, [actions, refreshKey]);
+  }, [actions, refreshKey, scope]);
 
   useEffect(() => {
     if (!selectedVendorId) {
       setAllEntries([]);
       return;
     }
+
+    const cacheKey = entryCacheKey(scope, selectedVendorId);
+    const cachedEntries = workspaceEntryCache.get(cacheKey);
+    if (cachedEntries) {
+      setAllEntries(cachedEntries);
+      setEntriesLoading(false);
+      return;
+    }
+
     let active = true;
     setEntriesLoading(true);
     actions.getEntriesByVendor(selectedVendorId).then(res => {
       if (!active) return;
-      if (res.success) setAllEntries(res.data);
+      if (res.success) {
+        workspaceEntryCache.set(cacheKey, res.data);
+        setAllEntries(res.data);
+      }
       else toast.error(res.error);
       setEntriesLoading(false);
     });
     return () => {
       active = false;
     };
-  }, [selectedVendorId, entriesKey, actions]);
+  }, [selectedVendorId, entriesKey, actions, scope]);
 
   const deferredVendorSearch = useDeferredValue(vendorSearch);
   const filteredVendors = useMemo(
@@ -289,6 +324,7 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
       if (res.success) {
         toast.success(vendorEditTarget ? 'Updated.' : 'Added.');
         setVendorFormOpen(false);
+        delete workspaceVendorCache[scope];
         reloadVendors();
       } else {
         toast.error(res.error);
@@ -308,6 +344,8 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
 
       const res = await actions.deleteVendor(snapshot.id);
       if (res.success) {
+        workspaceEntryCache.delete(entryCacheKey(scope, snapshot.id));
+        delete workspaceVendorCache[scope];
         if (selectedVendorId === snapshot.id) {
           setSelectedVendorId('');
         }
@@ -325,6 +363,8 @@ export function LedgerWorkspace({ scope }: LedgerWorkspaceProps) {
                   entries
                 );
           if (!restore.success) throw new Error(restore.error);
+          workspaceEntryCache.delete(entryCacheKey(scope, snapshot.id));
+          delete workspaceVendorCache[scope];
           reloadVendors();
         });
       } else {
